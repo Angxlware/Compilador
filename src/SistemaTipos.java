@@ -1,4 +1,3 @@
-//101 son enteros
 //102 son doubles
 //103 son strings
 //221 son true

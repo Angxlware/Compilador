@@ -1,208 +1,183 @@
-
-
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class AnalizadorLexico {
-    private final static String direccionArchivo ="src\\codigo.txt";
-
-    private Nodo cabeza = null, cola;
-    private int estado = 0, columna, transicion, numRenglon = 1, caracter = 0;
-    private String lexema = "";
-    boolean errorEncontrado = false;
-    private RandomAccessFile file=null;
-    private static final int[][] MATRIZ_TRANSICION = {
-        //       l      d	 _	 .       '      +        -        *	   /	  >      <       =        (	   )	   ,	  ;  	 :  	{      }     eb	  tab    nl   eof    oc
-        ////     0      l        2       3       4       5       6       7         8       9       10      11      12      13      14      15   16      17    18     19  20     21    22    23  
-        /*0*/ {  1,     2,      500,    500,     5,    104,     105,     106,     107,    6,     7,     112,     114,     115,    116,   118,    8,     9,    500,    0,   0,    0,    0,   500 },
-        /*1*/ {  1,     1,       1,     100,    100,   100,     100,     100,     100,   100,   100,    100,     100,     100,    100,   100,   100,   100,   100,   100, 100,  100,  100,  100 },
-        /*2*/ { 101,    2,      101,     3,     101,   101,     101,     101,     101,   101,   101,    101,     101,     101,    101,   101,   101,   101,   101,   101, 101,  101,  101,  101 },
-        /*3*/ { 502,    4,      502,    502,    502,   502,     502,     502,     502,   502,   502,    502,     502,     502,    502,   502,   502,   502,   502,   502, 502,  502,  502,  502 },
-        /*4*/ { 102,    4,      102,    102,    102,   102,     102,     102,     102,   102,   102,    102,     102,     102,    102,   102,   102,   102,   102,   102, 102,  102,  102,  102 },
-        /*5*/ {  5,     5,       5,      5,     103,    5,       5,       5,       5,     5,     5,      5,       5,       5,      5,     5,     5,     5,     5,     5,   5,   503,   5,    5  },
-        /*6*/ { 109,   109,     109,    109,    109,   109,     109,     108,     108,   108,   108,    109,     108,     108,    108,   108,   108,   108,   108,   108, 108,  108,  108,  108 },
-        /*7*/ { 110,   110,     110,    110,    110,   110,     110,     110,     110,   113,   110,    111,     110,     110,    110,   110,   110,   110,   110,   110, 110,  110,  110,  110 },
-        /*8*/ { 117,   117,     117,    117,    117,   117,     117,     117,     117,   117,   117,    119,     117,     117,    117,   117,   117,   117,   117,   117, 117,  117,  117,  117 },
-        /*9*/ {  9,     9,       9,      9,      9,     9,       9,       9,       9,     9,     9,      9,       9,       9,      9,     9,     9,     9,     0,     9,   9,   501,   9,    9}
+    // Variables de la clase
+    private final String direccionArchivo;  // direccion del archivo a compilar
+    private Nodo cabeza;                    // cabeza de la lista de tokens
+    private Nodo cola;                      // cola de la lista de tokens
+    private int estado;                     // estado del automata
+    private int transicion;                 // valor de la matriz de transicion
+    private int numRenglon;                 // numero de renglon actual del archivo
+    private String lexema;                  // lexema actual
+    private int caracter;                   // caracter actual
+    boolean errorEncontrado;                // bandera de error encontrado
+    private static final int[][] MATRIZ_TRANSICION = {  // matriz de transicion
+            //l    d	_	 .    \    +    -    *	  /	   >    <    =    (	   )	,	 ;    :    {    }   eb   tab  nl   cr   oc
+            {1  , 2  , 500, 500, 5  , 104, 105, 106, 107, 6  , 7  , 112, 114, 115, 116, 118, 8  , 9  , 500, 0  , 0  , 0  , 0  , 500},
+            {1  , 1  , 1  , 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100},
+            {101, 2  , 101, 3  , 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101},
+            {502, 4  , 502, 502, 502, 502, 502, 502, 502, 502, 502, 502, 502, 502, 502, 502, 502, 502, 502, 502, 502, 502, 502, 502},
+            {102, 4  , 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102},
+            {5  , 5  , 5,   5  , 103, 5  , 5  , 5  , 5  , 5  , 5  , 5  , 5  , 5  , 5  , 5  , 5  , 5  , 5  , 5  , 5  , 503, 5  , 5  },
+            {109, 109, 109, 109, 109, 109, 109, 108, 108, 108, 108, 109, 108, 108, 108, 108, 108, 108, 108, 108, 108, 108, 108, 108},
+            {110, 110, 110, 110, 110, 110, 110, 110, 110, 113, 110, 111, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110},
+            {117, 117, 117, 117, 117, 117, 117, 117, 117, 117, 117, 119, 117, 117, 117, 117, 117, 117, 117, 117, 117, 117, 117, 117},
+            {9  , 9  , 9  , 9  , 9  , 9  , 9  , 9  , 9  , 9  , 9  , 9  , 9  , 9  , 9  , 9  , 9  , 9  , 0  , 9  , 9  , 501, 9  , 9  }
     };
-    
-    private static final String[][] PALABRAS_RESERVADAS = {
-        //  0              1<--numero de columnas del arreglo 
-        /*0*/{"NOT", "200"},
-        /*1*/ {"AND", "201"},
-        /*2*/ {"OR", "202"},
-        /*3*/ {"VERDADERO", "203"},
-        /*4*/ {"FALSO", "204"},
-        /*5*/ {"SI", "205"},
-        /*6*/ {"ENTONCES", "206"},
-        /*7*/ {"FIN_SI", "207"},
-        /*8*/ {"SINO", "208"},
-        /*9*/ {"MIENTRAS", "209"},
-        /*10*/ {"HACER", "210"},
-        /*11*/ {"FIN_MIENTRAS", "211"},
-        /*12*/ {"ALGORITMO", "212"},
-        /*13*/ {"INICIO", "213"},
-        /*14*/ {"FIN", "214"},
-        /*15*/ {"LEER", "215"},
-        /*16*/ {"ESCRIBIR", "216"},
-        /*17*/ {"ES", "217"},
-        /*18*/ {"ENTERO", "218"},
-        /*19*/ {"DECIMAL", "219"},
-        /*20*/ {"CADENA", "220"},
-        /*20*/ {"LOGICO", "221"}
+    private static final String[][] PALABRAS_RESERVADAS = { // palabras reservadas
+            //   Palabra     Token
+            {"NOT"         , "200"},
+            {"AND"         , "201"},
+            {"OR"          , "202"},
+            {"VERDADERO"   , "203"},
+            {"FALSO"       , "204"},
+            {"SI"          , "205"},
+            {"ENTONCES"    , "206"},
+            {"FIN_SI"      , "207"},
+            {"SINO"        , "208"},
+            {"MIENTRAS"    , "209"},
+            {"HACER"       , "210"},
+            {"FIN_MIENTRAS", "211"},
+            {"ALGORITMO"   , "212"},
+            {"INICIO"      , "213"},
+            {"FIN"         , "214"},
+            {"LEER"        , "215"},
+            {"ESCRIBIR"    , "216"},
+            {"ES"          , "217"},
+            {"ENTERO"      , "218"},
+            {"DECIMAL"     , "219"},
+            {"CADENA"      , "220"},
+            {"LOGICO"      , "221"}
+    };
+    private static final String[][] ERRORES_LEXICOS = { // errores lexicos
+            //               Mensaje                  Token
+            {"Simbolo no valido"                    , "500"},
+            {"Se espera cierre de comentario"       , "501"},
+            {"Se espera un digito despues del punto", "502"},
+            {"Se espera cierre de cadena"           , "503"}
     };
 
-    private static final String[][] ERRORES_LEXICOS = {
-        //           0               1<--numero de columnas del arreglo 
-        /*0*/{"Simbolo no valido", "500"},
-        /*1*/ {"Se espera cierre de comentario", "501"},
-        /*2*/ {"Se espera un digito despues del punto", "502"},
-        /*3*/ {"Se espera cierre de cadena", "503"}
-    };
+    // Constructor
+    public AnalizadorLexico(String direccionArchivo){
+        this.direccionArchivo = direccionArchivo;
+        this.cabeza = this.cola = null;
+        this.estado = this.transicion = this.caracter = 0;
+        this.numRenglon = 1;
+        this.lexema = "";
+        this.errorEncontrado = false;
 
+        this.Analizar();
+    }
 
-    public AnalizadorLexico(){
+    // Obtener la cabeza de la lista de nodos
+    public Nodo getCabeza(){
+        return cabeza;
+    }
+
+    // Analizar lexico
+    private void Analizar() {
+        int columna;
+
         try {
-            file = new RandomAccessFile(direccionArchivo, "r");
-            while (caracter != -1) {//leer caracter por caracter mientras no sea eof, es decir, mientras el caracter sea el ultimo leido
+            RandomAccessFile file = new RandomAccessFile(direccionArchivo, "r");
+
+            while (caracter != -1) {
                 caracter = file.read();
-                //es posicionar la columna de la matriz de acuerdo al caracter leido
-                if (Character.isLetter(((char) caracter))) {//pregunta si es un caracter
-                    columna = 0;//esto es de acuerdo a la matriz de transicion
-                } else if (Character.isDigit((char) caracter)) {//pregunta si es un digito
+
+                if (Character.isLetter(((char) caracter)))
+                    columna = 0;
+                else if (Character.isDigit((char) caracter))
                     columna = 1;
-                } else {
-                    switch ((char) caracter) {//las columnas son de acuerdo a las columnas de la matriz de transicion
-                        case '_':
-                            columna = 2;
-                            break;
-                        case '\'':
-                            columna = 4;
-                            break;
-                        case '+':
-                            columna = 5;
-                            break;
-                        case '-':
-                            columna = 6;
-                            break;
-                        case '*':
-                            columna = 7;
-                            break;
-                        case '/':
-                            columna = 8;
-                            break;
-                        case '>':
-                            columna = 9;
-                            break;
-                        case '<':
-                            columna = 10;
-                            break;
-                        case '=':
-                            columna = 11;
-                            break;
-                        case '.':
-                            columna = 3;
-                            break;
-                        case '(':
-                            columna = 12;
-                            break;
-                        case ')':
-                            columna = 13;
-                            break;
-                        case ',':
-                            columna = 14;
-                            break;
-                        case ';':
-                            columna = 15;
-                            break;
-                        case ':':
-                            columna = 16;
-                            break;
-                        case '{':
-                            columna = 17;
-                            break;
-                        case '}':
-                            columna = 18;
-                            break;
-                        case ' '://espacio
-                            columna = 19;
-                            break;
-                        case 9://tab
-                            columna = 20;
-                            break;
-                        case 10:// nuevalinea
+                else {
+                    switch ((char) caracter) {
+                        case '_' -> columna = 2;
+                        case '.' -> columna = 3;
+                        case '\'' -> columna = 4;
+                        case '+' -> columna = 5;
+                        case '-' -> columna = 6;
+                        case '*' -> columna = 7;
+                        case '/' -> columna = 8;
+                        case '>' -> columna = 9;
+                        case '<' -> columna = 10;
+                        case '=' -> columna = 11;
+                        case '(' -> columna = 12;
+                        case ')' -> columna = 13;
+                        case ',' -> columna = 14;
+                        case ';' -> columna = 15;
+                        case ':' -> columna = 16;
+                        case '{' -> columna = 17;
+                        case '}' -> columna = 18;
+                        case ' ' -> columna = 19;
+                        case '\t' -> columna = 20;
+                        case '\n' -> {
                             columna = 21;
-                            numRenglon = numRenglon + 1;
-                            break;
-                        case 13:// retorno de carro
-                            columna = 22;
-                            break;
-                        default:
-                            columna = 23;
-                            break;
-                    }//switch
-                }//if character
-
-                transicion = MATRIZ_TRANSICION[estado][columna];
-                
-                if (transicion < 100) {//cambiar de estado
-                    estado = transicion;
-
-                    if (estado == 0) {
-                        lexema = "";
-                    } else {
-                        lexema = lexema + (char) caracter;
+                            ++numRenglon;
+                        }
+                        case '\r' -> columna = 22;
+                        default -> columna = 23;
                     }
-                } else if (transicion >= 100 && transicion < 500) {//estado final
-                    if (transicion == 100) {
-                        validarSiEsPalabraReservada();
-                    }
+                }
 
-                    if (transicion == 100 || transicion == 101 || transicion == 102 || transicion == 108 || transicion == 110
-                            || transicion == 117 || transicion == 9 || transicion >= 200) {
+                this.transicion = MATRIZ_TRANSICION[this.estado][columna];
 
+                if (this.transicion < 100) {
+                    this.estado = this.transicion;
+
+                    if (this.estado == 0)
+                        this.lexema = "";
+                    else
+                        this.lexema += (char) caracter;
+                } else if (this.transicion < 500) {
+                    if (this.transicion == 100)
+                        this.ValidarSiEsPalabraReservada();
+
+                    if ((transicion == 100) || (transicion == 101) || (transicion == 102) || (transicion == 108)
+                            || (transicion == 110) || (transicion == 117) || (transicion == 9) || (transicion >= 200))
                         file.seek(file.getFilePointer() - 1);
-                    } else {
-                        lexema = lexema + (char) caracter;
-                    }
-                    InsertarNodo();
-                    estado = 0;
-                    lexema = "";
+                    else
+                        lexema += (char) caracter;
+
+                    this.InsertarNodo();
+                    this.estado = 0;
+                    this.lexema = "";
                 } else {
-                    imprimirMensajeError();
+                    ImprimirMensajeError();
                     break;
                 }
             }
+
             ImprimirNodos();
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
     }
 
-    private void imprimirMensajeError() {
-        if (caracter != -1 && transicion >= 500) {
-            for (String[] errore : ERRORES_LEXICOS) {
-                if (transicion == Integer.valueOf(errore[1])) {
-                    System.out.println("El error encontrado es: " + errore[0] + " error " + transicion + " caracter " + (char) caracter + " en el renglon  "
-                            + numRenglon);
-                    
-                }
-            }
-            errorEncontrado = true;
+    // Imprimir mensaje de error
+    private void ImprimirMensajeError() {
+        if ((this.caracter != -1) && (this.transicion >= 500)) {
+            for (String[] error : ERRORES_LEXICOS)
+                if (transicion == Integer.parseInt(error[1]))
+                    System.out.println("Error: " + error[0] + " error " + this.transicion + " caracter "
+                            + (char) this.caracter + " en el renglon  " + this.numRenglon);
+
+            this.errorEncontrado = true;
         }
     }
 
+    // Insertar nodo en la lista
     private void InsertarNodo() {
-        Nodo nodo = new Nodo(lexema, transicion, numRenglon);
+        Nodo nodo = new Nodo(this.lexema, this.transicion, this.numRenglon);
 
-        if (cabeza == null) {
+        if (cabeza == null)
             this.cola = this.cabeza = nodo;
-        } else {
+        else {
             this.cola.sig = nodo;
             this.cola = nodo;
         }
     }
 
+    // Imprimir nodos de la lista
     public void ImprimirNodos() {
         System.out.println("<<< TOKENS INGRESADOS >>>");
 
@@ -214,16 +189,10 @@ public class AnalizadorLexico {
         }
     }
 
-    private void validarSiEsPalabraReservada() {
-        for (String[] palReservada : PALABRAS_RESERVADAS) {
-            if (lexema.equals(palReservada[0])) {
-                transicion = Integer.valueOf(palReservada[1]);
-            }
-        }
-    }
-    
-    public Nodo getCabeza(){
-        return cabeza;
+    // Validar si es una palabra reservada
+    private void ValidarSiEsPalabraReservada() {
+        for (String[] palabraReservada : PALABRAS_RESERVADAS)
+            if (this.lexema.equals(palabraReservada[0]))
+                this.transicion = Integer.parseInt(palabraReservada[1]);
     }
 }
-

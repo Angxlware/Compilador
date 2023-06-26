@@ -1,5 +1,3 @@
-
-
 public class NodoVar {
     String lexema;
      String tipo;

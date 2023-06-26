@@ -1,23 +1,17 @@
-ALGORITMO PROGRAM() ES
+ALGORITMO HOLA() ES
 
-a: CADENA;
-c: ENTERO
+a: ENTERO;
+b: ENTERO
 
 INICIO
 
-    a := 'HOLA MUNDO';
-    c := 1;
+    a := 5;
+    b := 1;
 
-    MIENTRAS (c <= 10) HACER
-
-        SI (c > 5) ENTONCES
-            ESCRIBIR a
-        SINO
-            ESCRIBIR c
-        FIN_SI;
-
-        c := c+1
-
-    FIN_MIENTRAS
+    SI (b <> 1) ENTONCES
+        ESCRIBIR a
+    SINO
+        ESCRIBIR b
+    FIN_SI
 
 FIN

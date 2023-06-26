@@ -1,7 +1,3 @@
-
-
-
-
 public class Nodo {
     int token, renglon;
     Nodo sig = null;
