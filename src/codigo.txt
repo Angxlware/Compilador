@@ -1,15 +1,21 @@
 ALGORITMO HOLA() ES
 
 a: ENTERO;
-b: ENTERO
+b: ENTERO;
+c: CADENA
 
 INICIO
 
     a := 5;
     b := 1;
+    c := '15WASD';
 
-    SI (b <> 1) ENTONCES
-        ESCRIBIR a
+    SI (b = 1) ENTONCES
+        SI (a <> 5) ENTONCES
+            ESCRIBIR a
+        SINO
+            ESCRIBIR '15'
+        FIN_SI
     SINO
         ESCRIBIR b
     FIN_SI

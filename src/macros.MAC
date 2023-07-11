@@ -1,0 +1,212 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; OPERADOR DE ASIGNACION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; op1 := op2
+Asignar MACRO op1, op2
+	MOV AL, op2	; Al = op2
+	MOV op1, AL ; op1 = AL
+ENDM
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; OPERADORES ARITMETICOS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; res = op1 + op2
+Sumar MACRO op1, op2, res
+    MOV AL, op1 ; AL = op1
+	ADD AL, op2 ; AL += op2
+	MOV res, AL ; res = AL
+ENDM
+
+; res = op1 - op2
+Restar MACRO op1, op2, res
+	MOV AL, op1 ; AL = op1
+	SUB AL, op2 ; AL -= op2
+	MOV res, AL ; res = AL
+ENDM
+
+; res = op1 * op2
+Multiplicar MACRO op1, op2, res
+	MOV AL, op1
+	MOV BL, op2
+	IMUL BL
+	MOV res, AL
+ENDM
+
+; res = op1 / op2
+Dividir	MACRO op1, op2, res
+	MOV DX, 0
+	MOV AL, op1
+	MOV BL, op2
+	IDIV BL
+	MOV res, AL
+ENDM
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; OPERADORES RELACIONALES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; res = op1 < op2
+MenorQue MACRO op1, op2, res
+	LOCAL LABEL1
+	LOCAL SALIR
+
+	MOV AL, op1
+	CMP AL, op2
+	JGE LABEL1
+	; true
+	MOV res, 1
+	JMP SALIR
+	; false
+	LABEL1:
+		MOV res, 0
+	SALIR:
+ENDM
+
+; res = op1 <= op2
+MenorIgualQue MACRO op1, op2, res
+	LOCAL LABEL1
+	LOCAL SALIR
+
+	MOV AL, op1
+	CMP AL, op2
+	JG	LABEL1
+	; true
+	MOV res, 1
+	JMP SALIR
+	; false
+	LABEL1:
+		MOV res, 0
+	SALIR:
+ENDM
+
+; res = op1 = op2
+IgualQue MACRO op1, op2, res
+	LOCAL LABEL1
+	LOCAL SALIR
+
+	MOV AL, op1
+	CMP AL, op2
+	JNE LABEL1
+	; true
+	MOV res, 1
+	JMP SALIR
+	; false
+	LABEL1:
+		MOV res, 0
+	SALIR:
+ENDM
+
+; res = op1 <> op2
+DiferenteQue MACRO op1, op2, res
+	LOCAL LABEL1
+	LOCAL SALIR
+
+	MOV AL, op1
+	CMP AL, op2
+	JE	LABEL1
+	; true
+	MOV res, 1
+	JMP SALIR
+	; false
+	LABEL1:
+		MOV res, 0
+	SALIR:
+ENDM
+
+; res = op1 > op2
+MayorQue MACRO op1, op2, res
+	LOCAL LABEL1
+	LOCAL SALIR
+
+	MOV AL, op1
+	CMP AL, op2
+	JLE	LABEL1
+	; true
+	MOV res, 1
+	JMP SALIR
+	; false
+	LABEL1:
+		MOV res, 0
+	SALIR:
+ENDM
+
+; res = op1 >= op2
+MayorIgualQue MACRO op1, op2, res
+	LOCAL LABEL1
+	LOCAL SALIR
+
+	MOV AL, op1
+	CMP AL, op2
+	JL	LABEL1
+	; true
+	MOV res, 1
+	JMP SALIR
+	; false
+	LABEL1:
+		MOV RESULTADO, 0
+	SALIR:
+ENDM
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; SALTOS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+JF MACRO VALOR1,DESTINO
+   	MOV AL,VALOR1
+   	CMP AL,1                   
+   	JNE DESTINO
+ENDM
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; ENTRADA / SALIDA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Leer MACRO MESSAGE
+	MOV AH,3Fh
+    MOV BX,0000h
+	MOV CX,0100h
+	LEA DX,MESSAGE
+	INT 21h
+ENDM
+
+EscribirCadena MACRO MESSAGE
+	MOV AH,09
+	LEA DX, MESSAGE
+	INT 21h
+ENDM
+
+EscribirNumero MACRO MESSAGE
+	MOV CL, MESSAGE
+	ADD CL, 48
+    MOV impresion, CL
+    MOV AH, 2h
+    MOV DL, impresion
+    INT 21h
+			
+	MOV ah,02h
+    MOV dl,0ah 
+    INT 21h
+    MOV ah,02h
+    MOV dl,0dh 
+    INT 21h
+ENDM
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

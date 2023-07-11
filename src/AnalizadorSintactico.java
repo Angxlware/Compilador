@@ -2,7 +2,7 @@ import java.io.*;
 import java.util.Stack;
 
 public class AnalizadorSintactico extends AnalizadorSemantico {
-    private static final String direccionSalida = "C:\\MP";
+    private static final String direccionSalida = "src\\";
     private static final String[][] ERRORES_SINTACTICOS = {
             {"Simbolo no valido", "500"},
             {"Se espera cierre de comentario", "501"},
@@ -81,7 +81,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
                 }
 
                 System.out.println("Error: " + errores[0] + ", Numero de error: "
-                        + num_error + " " + "" + "En la línea: " + " " + cola.renglon);
+                        + num_error + " En la línea: " + " " + cola.renglon);
             }
         }
         errorEncontrado = true;
@@ -327,43 +327,36 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
 
     private void Expresion_logica() {
         switch (cola.token) {
-            case 114:// (
+            case 114 -> {// (
                 cola = cola.sig;
                 Expresion_logica();
                 if (cola.token == 115) {// )
                     cola = cola.sig;
                     Exp_logica_1();
                 }
-                break;
-
-            case 200:// NOT
+            }
+            case 200 -> {// NOT
                 Push_pilaInicial(cola.token);
                 EntradaPila(cola.token, cola.lexema);
                 cola = cola.sig;
                 Expresion_logica();
                 Exp_logica_1();
-                break;
-
-            case 100:// Identificadores
+            }
+            case 100 -> {// Identificadores
                 if ((cola.sig.token >= 108) && (cola.sig.token <= 113)) {// Operadores Operadores_Relacionales
                     expresion_relacional();
                 } else {
                     Exp_logica_1();
                 }
-                break;
-
-            case 203:// true
-                Exp_logica_1();
-                break;
-
-            case 204:// false
-                Exp_logica_1();
-                break;
-
-            default:
+            }
+            case 203 ->// true
+                    Exp_logica_1();
+            case 204 ->// false
+                    Exp_logica_1();
+            default -> {
                 expresion_relacional();
                 Exp_logica_1();
-                break;
+            }
         }
     }
 
@@ -405,23 +398,17 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         Token_Invertidos.push(114);
         Lexemas_invertidos.push("(");
         while (!Token_Invertidos.empty()) {
-            
             switch (Jerarquia_Operaciones(Token_Invertidos.peek())) { // 221
-                case 0:
-                    Insertar_ListaPolish(Lexemas_invertidos.pop(), Token_Invertidos.pop());
-                    break;
-
-                case 1: // :=
+                case 0 -> Insertar_ListaPolish(Lexemas_invertidos.pop(), Token_Invertidos.pop());
+                case 1 -> { // :=
                     Tokens_operandos.push(Token_Invertidos.pop());
                     Lexemas_operandos.push(Lexemas_invertidos.pop());
-                    break;
-
-                case 2: // (
+                }
+                case 2 -> { // (
                     Tokens_operandos.push(Token_Invertidos.pop());
                     Lexemas_operandos.push(Lexemas_invertidos.pop());
-                    break;
-
-                case 3: // )
+                }
+                case 3 -> { // )
                     while (!Tokens_operandos.peek().equals(114)) {
                         Insertar_ListaPolish(Lexemas_operandos.pop(), Tokens_operandos.pop());
                     }
@@ -429,23 +416,21 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
                     Lexemas_operandos.pop();
                     Token_Invertidos.pop();
                     Lexemas_invertidos.pop();
-                    break;
+                } // AND OR
 
-                case 4: // AND OR
+                // NOT
 
-                case 5:// NOT
+                // operadores relacionales
 
-                case 6: // operadores relacionales
+                // + -
 
-                case 7: // + - 
-
-                case 8: // * /
+                case 4, 5, 6, 7, 8 -> { // * /
                     while (Jerarquia_Operaciones(Tokens_operandos.peek()) >= Jerarquia_Operaciones(Token_Invertidos.peek())) {
                         Insertar_ListaPolish(Lexemas_operandos.pop(), Tokens_operandos.pop());
                     }
                     Tokens_operandos.push(Token_Invertidos.pop());
                     Lexemas_operandos.push(Lexemas_invertidos.pop());
-                    break;
+                }
             }
         }
     }
@@ -533,32 +518,26 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
 
     private void Nombre_tipo_simple() {
         switch (cola.token) {
-            case 218://Entero
+            case 218 -> {//Entero
                 cola.token = 101;
                 tipo = cola.token;
                 cola = cola.sig;
-                break;
-
-            case 219://Decimal
+            }
+            case 219 -> {//Decimal
                 cola.token = 102;
                 tipo = cola.token;
                 cola = cola.sig;
-                break;
-
-            case 220://Cadena
+            }
+            case 220 -> {//Cadena
                 cola.token = 103;
                 tipo = cola.token;
                 cola = cola.sig;
-                break;
-
-            case 221://Boolean
+            }
+            case 221 -> {//Boolean
                 tipo = cola.token;
                 cola = cola.sig;
-                break;
-
-            default:
-                ErrorMensaje(514);
-                break;
+            }
+            default -> ErrorMensaje(514);
         }
     }
 
@@ -601,111 +580,82 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
 
     private void IncompatibilidadTipos(Stack lista) {
         boolean error = false;
-        int columna_fila = 0, fila_lista = 0, operando1 = 0, operando2 = 0;
+        int columna_fila = 0, fila_lista = 0, operando1, operando2;
+
         for (int i = 0; i < Salida_lista.size(); i++) {
             int operador = (int) lista.get(i);
             if ((operador >= 104 && operador <= 113) || (operador == 119) || (operador >= 200 && operador <= 202)) {
                 operando1 = aux_salida.pop();
                 operando2 = aux_salida.pop();
+
                 switch (operando1) {
-                    case 101:
-                        columna_fila = 0;
-                        break;
-
-                    case 102:
-                        columna_fila = 1;
-                        break;
-
-                    case 103:
-                        columna_fila = 2;
-                        break;
-
-                    case 221:
-                        columna_fila = 3;
-                        break;
+                    case 101 -> columna_fila = 0;
+                    case 102 -> columna_fila = 1;
+                    case 103 -> columna_fila = 2;
+                    case 221 -> columna_fila = 3;
                 }
                 switch (operando2) {
-                    case 101:
-                        fila_lista = 0;
-                        break;
-
-                    case 102:
-                        fila_lista = 1;
-                        break;
-
-                    case 103:
-                        fila_lista = 2;
-                        break;
-
-                    case 221:
-                        fila_lista = 3;
-                        break;
-
+                    case 101 -> fila_lista = 0;
+                    case 102 -> fila_lista = 1;
+                    case 103 -> fila_lista = 2;
+                    case 221 -> fila_lista = 3;
                 }
                 switch (operador) {
-                    case 104:
+                    case 104 -> {
                         if (Tipos.Sumas[fila_lista][columna_fila] == 0) {
                             error = true;
                         } else {
                             aux_salida.push(Tipos.Sumas[fila_lista][columna_fila]);
                         }
-                        break;
-                    case 105:
+                    }
+                    case 105 -> {
                         if (Tipos.Resta_Multiplicacion[fila_lista][columna_fila] == 0) {
                             error = true;
                         } else {
                             aux_salida.push(Tipos.Resta_Multiplicacion[fila_lista][columna_fila]);
                         }
-                        break;
-                    case 106:
+                    }
+                    case 106 -> {
                         if (Tipos.Resta_Multiplicacion[fila_lista][columna_fila] == 0) {
                             error = true;
                         } else {
                             aux_salida.push(Tipos.Resta_Multiplicacion[fila_lista][columna_fila]);
                         }
-                        break;
-                    case 107:
+                    }
+                    case 107 -> {
                         if (Tipos.Divisiones[fila_lista][columna_fila] == 0) {
                             error = true;
                         } else {
                             aux_salida.push(Tipos.Divisiones[fila_lista][columna_fila]);
                         }
-                        break;
-                    case 119:
+                    }
+                    case 119 -> {
                         if (!Tipos.Asignaciones[fila_lista][columna_fila]) {
                             error = true;
                         }
-                        break;
-
-                    case 110:
-                    case 108:
-                    case 109:
-                    case 111:
+                    }
+                    case 110, 108, 109, 111 -> {
                         if (Tipos.Operadores_Relacionales[fila_lista][columna_fila] == 0) {
                             error = true;
                         } else {
                             aux_salida.push(Tipos.Operadores_Relacionales[fila_lista][columna_fila]);
                         }
-                        break;
-
-                    case 112:
-                    case 113:
+                    }
+                    case 112, 113 -> {
                         if (Tipos.Igual_Diferente[fila_lista][columna_fila] == 0) {
                             error = true;
                         } else {
                             aux_salida.push(Tipos.Igual_Diferente[fila_lista][columna_fila]);
                         }
-                        break;
-
-                    case 200:// NOT
-                    case 201:// AND 
-                    case 202:// OR
+                    }// NOT
+                    // AND
+                    case 200, 201, 202 -> {// OR
                         if (!Tipos.Operadores_Logicos[fila_lista][columna_fila]) {
                             error = true;
                         } else {
                             aux_salida.push(221);
                         }
-                        break;
+                    }
                 }
             } else {
                 aux_salida.push(operador);
@@ -746,8 +696,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
 
     private void BuscarCadenaPolish() {
         String Cadena = "";
-        NodoVar aux_polish = cab_polish;
-        NodoVar aux_buscar = aux_polish;
+        NodoVar aux_buscar = cab_polish;
         while (aux_buscar != null) {
             if (aux_buscar.token == 103) {
                 Cadena = aux_buscar.lexema;
@@ -777,21 +726,25 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         return lexema;
     }
 
-    private void Pie_PaginaAsm() {
-        textoEnsamblador += "ret\n"
-                + "METODOS  ENDP\n"
-                + "END";
+    private void PiePaginaASM() {
+            textoEnsamblador += """
+                    RET
+                    METODOS  ENDP
+                    
+                    END""";
     }
 
-    private void CabezeraAsm() {
-        textoEnsamblador = "INCLUDE macros.MAC\n"
-                + ".MODEL SMALL\n"
-                + ".STACK 100h\n"
-                + ".DATA\n";
+    private void CabeceraASM() {
+        textoEnsamblador = """
+                INCLUDE macros.MAC
+                .MODEL SMALL
+                .STACK 100h
+                .DATA
+                """;
     }
 
     private void GenerarCodigoObjeto() {
-        CabezeraAsm();
+        CabeceraASM();
         p_var = cab_var;
         BuscarCadenaPolish();
         while (p_var != null) {
@@ -803,20 +756,28 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
             }
             p_var = p_var.sig;
         }
+
         int contadorCadenas = 1;
+
         for (int i = 0; i < VariablesCadenas.size(); i++) {
-            textoEnsamblador += "\n" + "Texto" + contadorCadenas++ + " db " + VariablesCadenas.get(i) + ", 13,10,'$' ";
+            textoEnsamblador += "cadena" + contadorCadenas++ + " db " + VariablesCadenas.get(i) + ", 13, 10, '$'\n";
         }
 
-        textoEnsamblador += "impresion db ?\n"
-                + ";/Var\n"
-                + ".CODE\n"
-                + "MOV     AX, @DATA\n"
-                + "MOV     DS, AX\n"
-                + "CALL    METODOS\n"
-                + "MOV AX,4C00H\n"
-                + "INT 21H\n"
-                + "METODOS PROC\n";
+        textoEnsamblador += """
+                impresion db ?
+                ;/Var
+                
+                .CODE
+                MOV AX, @DATA
+                MOV DS, AX
+       
+                CALL METODOS
+                
+                MOV AX,4C00H
+                INT 21H
+                
+                METODOS PROC
+                """;
 
         aux_polish = cab_polish;
         while (aux_polish != null) {
@@ -825,21 +786,20 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
                     || aux_polish.token == 216 || aux_polish.token == 0) {
                 operador = aux_polish.lexema;
 
-                switch (operador) {
-                    // 119 >=, 114 (, 104 +, 202 AND, 215 Leer, 216 Escribir, 104 +, 105 -, 106 *, 107 /, 108 >
+                switch (operador) { // nombres de las macros
                     case "+" -> OperandosAsm("Sumar");
                     case "-" -> OperandosAsm("Restar");
-                    case "*" -> OperandosAsm("Multi");
+                    case "*" -> OperandosAsm("Multiplicar");
                     case "/" -> OperandosAsm("Dividir");
                     case ":=" -> OpAsignacionAsm("Asignar");
                     case "LEER" -> OpLeerAsm("Leer");
-                    case "ESCRIBIR" -> OpEscribirAsm("LeerN", "Escribir");
-                    case "=" -> OperandosAsm("Igual");
-                    case ">" -> OperandosAsm("Mayor_que");
-                    case "<" -> OperandosAsm("Menor_que");
-                    case ">=" -> OperandosAsm("MayorIgual");
-                    case "<=" -> OperandosAsm("MenorIgual");
-                    case "<>" -> OperandosAsm("Diferentes");
+                    case "ESCRIBIR" -> OpEscribirAsm("EscribirCadena", "EscribirNumero");
+                    case "=" -> OperandosAsm("IgualQue");
+                    case ">" -> OperandosAsm("MayorQue");
+                    case "<" -> OperandosAsm("MenorQue");
+                    case ">=" -> OperandosAsm("MayorIgualQue");
+                    case "<=" -> OperandosAsm("MenorIgualQue");
+                    case "<>" -> OperandosAsm("DiferenteQue");
                 }
                 Saltos_Etiquetas("JF", "JMP");
             } else {
@@ -847,12 +807,13 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
             }
             aux_polish = aux_polish.sig;
         }
-        Pie_PaginaAsm();
+        PiePaginaASM();
 
         System.out.println("\n<<< CODIGO INTERMEDIO >>>");
         System.out.println(textoEnsamblador);
 
         GenerarArchivoAsm();
+        //CompilarYEjecutar();
     }
 
     private void GenerarArchivoAsm() {
@@ -870,10 +831,12 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         } catch (Exception e) {                                                             // error
             System.out.println("Ha ocurrido un error al generar el archivo: " + e.getMessage());
         }
+    }
 
+    private void CompilarYEjecutar() {
         // compilar y ejecutar en dosbox
         try {
-            String[] command = {                                    // comando a ejecutar
+            String[] cmd = {                                    // comando a ejecutar
                     "dosbox",
                     "-c", "mount c " + direccionSalida,
                     "-c", "c:",
@@ -882,8 +845,8 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
                     "-c", nombrePrograma + ".exe"
             };
 
-            ProcessBuilder builder = new ProcessBuilder(command);   // crear proceso
-            builder.start();                                        // ejecutar comando
+            ProcessBuilder builder = new ProcessBuilder(cmd);   // crear proceso
+            builder.start();                                    // ejecutar comando
         } catch (Exception e) {
             System.out.println("Ha ocurrido un error al intentar compilar el archivo: " + e.getMessage());
         }
@@ -893,11 +856,11 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         String operando2 = buscarPolish.pop();
         String operando1 = buscarPolish.pop();
 
-        textoEnsamblador += "" + OperadoresMacro + " " + operando1 + "," + operando2 + ",resultado" + contador + "\n";
+        textoEnsamblador += OperadoresMacro + " " + operando1 + "," + operando2 + ", resultado" + contador + "\n";
 
         resultadoASM = ("resultado" + contador);
         buscarPolish.push(resultadoASM);
-        textoEnsamblador = Cambiar(textoEnsamblador, ";/Var", " resultado" + contador + " db " + " ? " + "\n;/Var");
+        textoEnsamblador = Cambiar(";/Var", "resultado" + contador + " db ?\n;/Var");
     }
 
     private void OpAsignacionAsm(String Macro) {
@@ -906,7 +869,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         boolean bandera = false;
         for (int i = 0; i < VariablesStrings.size(); i++) {
             if (VariablesStrings.get(i).equals(operador1)) {
-                textoEnsamblador = Cambiar(textoEnsamblador, "" + operador1 + ";/auxiliar ", "\n" + operador1 + " db " + operador2);
+                textoEnsamblador = Cambiar("" + operador1 + ";/auxiliar ", "\n" + operador1 + " db " + operador2);
                 bandera          = true;
                 break;
             }
@@ -920,19 +883,19 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         String operador1 = buscarPolish.pop();
 
         boolean bandera = false;
-        for (int i = 0; i < VariablesStrings.size(); i++) {
-            if (VariablesStrings.get(i).equals(operador1)) {
+        for (String variablesString : VariablesStrings) {
+            if (variablesString.equals(operador1)) {
                 bandera = true;
                 break;
             }
         }
         if (bandera) {
             System.out.println(operador1);
-            String Cadena = " " + operador1 + "";
-            boolean ContieneCadena = textoEnsamblador.indexOf(Cadena) >= 0;
+            String Cadena = " " + operador1;
+            boolean ContieneCadena = textoEnsamblador.contains(Cadena);
             if (ContieneCadena) {
-                textoEnsamblador = Cambiar(textoEnsamblador, Cadena, "\n" + Cadena);
-                textoEnsamblador = Cambiar(textoEnsamblador, ";/auxiliar", " db 0");
+                textoEnsamblador = Cambiar(Cadena, "\n" + Cadena);
+                textoEnsamblador = Cambiar(";/auxiliar", " db 0");
             }
         }
         textoEnsamblador += "" + LeerMacro + " " + operador1 + "\n";
@@ -941,21 +904,20 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
     private void OpEscribirAsm(String EscribirLinea, String Escribir) {
         String operador1 = buscarPolish.pop();
 
-        boolean bandera = false;
+        boolean esString = false;
 
-        for (String variablesString : VariablesStrings) {
+        for (String variablesString : VariablesStrings)
             if (variablesString.equals(operador1)) {
-                bandera = true;
+                esString = true;
                 break;
             }
-        }
 
-        if (bandera && !operador1.startsWith("'"))
-            textoEnsamblador += "" + EscribirLinea + " " + operador1 + "\n";
-        else if (!bandera && !operador1.startsWith("'"))
-            textoEnsamblador += "" + Escribir + " " + operador1 + "\n";
+        if (esString && !operador1.startsWith("'"))
+            textoEnsamblador += EscribirLinea + " " + operador1 + "\n";
+        else if (!esString && !operador1.startsWith("'"))
+            textoEnsamblador += Escribir + " " + operador1 + "\n";
         else
-            textoEnsamblador += "" + EscribirLinea + " Texto" + contadorcadenas++ + "\n";
+            textoEnsamblador += EscribirLinea + " cadena" + (contadorcadenas++) + "\n";
     }
 
     private void Saltos_Etiquetas(String JF, String JMP) {
@@ -969,12 +931,12 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         } else if (operador.startsWith("A") || operador.startsWith("B")
                 || operador.startsWith("C") || operador.startsWith("D")) {
             String p = operador.substring(0, 2);
-            textoEnsamblador += " " + p + ":\n";
+            textoEnsamblador += p + ":\n";
         }
         contador++;
     }
 
-    private String Cambiar(String cadena, String buscar, String reemplazar) {
-        return cadena.replaceAll(buscar, reemplazar);
+    private String Cambiar(String buscar, String reemplazar) {
+        return textoEnsamblador.replaceAll(buscar, reemplazar);
     }
 }
