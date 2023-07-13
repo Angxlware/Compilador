@@ -2,7 +2,7 @@ import java.io.*;
 import java.util.Stack;
 
 public class AnalizadorSintactico extends AnalizadorSemantico {
-    private static final String direccionSalida = "src\\";
+    private static final String direccionSalida = "C:\\MP";
     private static final String[][] ERRORES_SINTACTICOS = {
             {"Simbolo no valido", "500"},
             {"Se espera cierre de comentario", "501"},
@@ -31,118 +31,122 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
             {"Incompatibilidad de datos", "520"}
     };
 
-    private Nodo cola, aux, listaErrores, cabeza;
-    private NodoVar nodo;
+    private Nodo colaLexemas, auxiliarLexemas, listaErrores, cabezaLista;
+    private NodoVar nodoVariable;
     boolean errorEncontrado = false;
-    private String lexemaAux, Lexema = "", nombrePrograma, textoEnsamblador = "", operador = "", resultadoASM;
-    private Stack<String> buscarPolish = new Stack<>(), VariablesStrings = new Stack<>();
-    private Stack<String> VariablesCadenas = new Stack<>();
-    private int tipo, ContadorIf, ContadorWhile, contador, contadorcadenas = 1;
-    private SistemaTipos Tipos = new SistemaTipos();
-    private Stack<Integer> tokens = new Stack<>();
+    private String lexemaAuxiliar;
+    private String lexemaActual = "";
+    private String nombrePrograma;
+    private String textoEnsamblador = "";
+    private String operadorActual = "";
+    private final Stack<String> pilaPolish = new Stack<>();
+    private final Stack<String> pilaVariablesStrings = new Stack<>();
+    private final Stack<String> pilaVariablesCadenas = new Stack<>();
+    private int tipoActual, contadorIf, contadorWhile, contadorGeneral, contadorCadenas = 1;
+    private final Stack<Integer> pilaTokens = new Stack<>();
 
     private void Error(int linea) {
-        while (aux.sig != null) {
-            if (((aux.token >= 101 && aux.token <= 113) || (aux.token == 221)
-                    || (aux.token >= 200 && aux.token <= 202) || (aux.token == 119)) && (aux.renglon == linea)) {
-                Lexema = Lexema + " " + aux.lexema + " ";
-                tokens.add(aux.token);
+        while (auxiliarLexemas.sig != null) {
+            if (((auxiliarLexemas.token >= 101 && auxiliarLexemas.token <= 113) || (auxiliarLexemas.token == 221)
+                    || (auxiliarLexemas.token >= 200 && auxiliarLexemas.token <= 202) || (auxiliarLexemas.token == 119))
+                    && (auxiliarLexemas.renglon == linea)) {
+                lexemaActual += " " + auxiliarLexemas.lexema + " ";
+                pilaTokens.add(auxiliarLexemas.token);
             }
-            aux = aux.sig;
+            auxiliarLexemas = auxiliarLexemas.sig;
         }
     }
 
-    private void Error_semantico(int num_error) {
+    private void errorSemantico(int num_error) {
         for (String[] errores : ERRORES_SEMANTICOS) {
             if (num_error == Integer.parseInt(errores[1])) {
-                if (aux != null) {
-                    Error(aux.renglon);
+                if (auxiliarLexemas != null) {
+                    Error(auxiliarLexemas.renglon);
                 }
-                System.out.println("Error: " + errores[0] + " (" + Lexema + ") " + ", Numero de error: " + num_error + " , " + "En la línea: " + " " + cola.renglon);
-                Lexema = "";
+                System.out.println("Error: " + errores[0] + " (" + lexemaActual + ") " + ", Numero de error: "
+                        + num_error + " , " + "En la línea: " + " " + colaLexemas.renglon);
+                lexemaActual = "";
             }
         }
         errorEncontrado = true;
     }
 
-    
-
-    private void ErrorMensaje(int num_error) {
+    private void mostrarError(int num_error) {
         for (String[] errores : ERRORES_SINTACTICOS) {
             if (num_error == Integer.parseInt(errores[1])) {
-                Nodo Nodo = new Nodo(errores[0], num_error, cola.renglon);
+                Nodo Nodo = new Nodo(errores[0], num_error, colaLexemas.renglon);
                 
-                if (cabeza == null) {
-                    cabeza       = Nodo;
-                    listaErrores = cabeza;
+                if (cabezaLista == null) {
+                    cabezaLista = Nodo;
+                    listaErrores = cabezaLista;
                 } else {
                     listaErrores.sig = Nodo;
                     listaErrores     = Nodo;
                 }
 
                 System.out.println("Error: " + errores[0] + ", Numero de error: "
-                        + num_error + " En la línea: " + " " + cola.renglon);
+                        + num_error + " En la línea: " + " " + colaLexemas.renglon);
             }
         }
         errorEncontrado = true;
     }
 
-    public AnalizadorSintactico(Nodo cabeza) {
-        cola = cabeza;
+    public AnalizadorSintactico(Nodo cabezaLista) {
+        colaLexemas = cabezaLista;
         try {
-            while (cola != null) {
-                if (cola.token == 212) { // ALGORITMO
-                    cola = cola.sig;
+            while (colaLexemas != null) {
+                if (colaLexemas.token == 212) { // ALGORITMO
+                    colaLexemas = colaLexemas.sig;
 
-                    if (cola.token == 100) { // Nombre del programa
-                        nombrePrograma = cola.lexema;
-                        cola           = cola.sig;
+                    if (colaLexemas.token == 100) { // Nombre del programa
+                        nombrePrograma = colaLexemas.lexema;
+                        colaLexemas = colaLexemas.sig;
 
-                        if (cola.token == 114) { // (
-                            cola = cola.sig;
+                        if (colaLexemas.token == 114) { // (
+                            colaLexemas = colaLexemas.sig;
 
-                            if (cola.token == 115) { // )
-                                cola = cola.sig;
+                            if (colaLexemas.token == 115) { // )
+                                colaLexemas = colaLexemas.sig;
 
-                                if (cola.token == 217) { // ES (Declaracion de variables)
-                                    cola = cola.sig;
-                                    Dec_variable();
+                                if (colaLexemas.token == 217) { // ES (Declaracion de variables)
+                                    colaLexemas = colaLexemas.sig;
+                                    declaracionVariables();
 
-                                    if (cola.token == 213) { // INICIO (Codigo del programa)
-                                        cola = cola.sig;
-                                        Imprimir_Listavariables();
-                                        Inicializar();
-                                        Imprimir_ListaPolish();
-                                        GenerarCodigoObjeto();
+                                    if (colaLexemas.token == 213) { // INICIO (Codigo del programa)
+                                        colaLexemas = colaLexemas.sig;
+                                        imprimirListaVariables();
+                                        inicializar();
+                                        imprimirListaPolish();
+                                        generarCodigoEnsamblador();
 
-                                        if (cola.token == 214) //FIN
+                                        if (colaLexemas.token == 214) //FIN
                                             break;
                                         else {
-                                            ErrorMensaje(509);
+                                            mostrarError(509);
                                             break;
                                         }
                                     } else {
-                                        ErrorMensaje(508);
+                                        mostrarError(508);
                                         break;
                                     }
                                 } else {
-                                    ErrorMensaje(510);
+                                    mostrarError(510);
                                     break;
                                 }
                             } else {
-                                ErrorMensaje(507);
+                                mostrarError(507);
                                 break;
                             }
                         } else {
-                            ErrorMensaje(506);
+                            mostrarError(506);
                             break;
                         }
                     } else {
-                        ErrorMensaje(505);
+                        mostrarError(505);
                         break;
                     }
                 } else {
-                    ErrorMensaje(504);
+                    mostrarError(504);
                     break;
                 }
             }
@@ -152,51 +156,51 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         }
     }
 
-    private void Inicializar() {
-        switch (cola.token) {
+    private void inicializar() {
+        switch (colaLexemas.token) {
             case 100 -> { // Variable
-                aux = cola;
-                Variable_sin_declarar();
-                Push_pilaInicial(cola.token);
-                EntradaPila(cola.token, cola.lexema);
-                cola = cola.sig;
-                Asignacion();
+                auxiliarLexemas = colaLexemas;
+                variableSinDeclarar();
+                pushPilaInicial(colaLexemas.token);
+                entradaPila(colaLexemas.token, colaLexemas.lexema);
+                colaLexemas = colaLexemas.sig;
+                asignacion();
             }
             case 215 -> { //LEER
-                EntradaPila(cola.token, cola.lexema);
-                cola = cola.sig;
-                Leer();
-                CodigoIntermedio();
-                if (cola.token == 118) {//;
-                    cola = cola.sig;
-                    Inicializar();
+                entradaPila(colaLexemas.token, colaLexemas.lexema);
+                colaLexemas = colaLexemas.sig;
+                leer();
+                generarCodigoIntermedio();
+                if (colaLexemas.token == 118) {//;
+                    colaLexemas = colaLexemas.sig;
+                    inicializar();
                 }
             }
             case 216 -> { // ESCRIBIR
-                EntradaPila(cola.token, cola.lexema);
-                cola = cola.sig;
-                Escribir();
-                CodigoIntermedio();
-                if (cola.token == 118) {
-                    cola = cola.sig;
-                    Inicializar();
+                entradaPila(colaLexemas.token, colaLexemas.lexema);
+                colaLexemas = colaLexemas.sig;
+                escribir();
+                generarCodigoIntermedio();
+                if (colaLexemas.token == 118) {
+                    colaLexemas = colaLexemas.sig;
+                    inicializar();
                 }
             }
             case 205 -> {//SI
-                aux = cola;
-                Si();
-                if (cola.token == 118) {
-                    cola = cola.sig;
-                    Inicializar();
+                auxiliarLexemas = colaLexemas;
+                si();
+                if (colaLexemas.token == 118) {
+                    colaLexemas = colaLexemas.sig;
+                    inicializar();
                 }
             }
             case 209 -> {//MIENTRAS
-                aux  = cola;
-                cola = cola.sig;
-                Mientras();
-                if (cola.token == 118) {
-                    cola = cola.sig;
-                    Inicializar();
+                auxiliarLexemas = colaLexemas;
+                colaLexemas = colaLexemas.sig;
+                mientras();
+                if (colaLexemas.token == 118) {
+                    colaLexemas = colaLexemas.sig;
+                    inicializar();
                 }
             }
             default -> {
@@ -205,273 +209,226 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
     }
     
      // cambios 
-    private void Escribir() {
+    private void escribir() {
         boolean cadena = false;
-        if (cola.token == 116) { // ,
-            EntradaPila(cola.token, cola.lexema);
-            cola = cola.sig;
-            if (cola.token == 118) {
-                cola = cola.sig;
-                Escribir();
+        if (colaLexemas.token == 116) { // ,
+            entradaPila(colaLexemas.token, colaLexemas.lexema);
+            colaLexemas = colaLexemas.sig;
+            if (colaLexemas.token == 118) {
+                colaLexemas = colaLexemas.sig;
+                escribir();
             }
         }
-        if (cola.token == 103) { // CADENA o string
+        if (colaLexemas.token == 103) { // CADENA o string
             cadena = true;
-            EntradaPila(cola.token, cola.lexema);
-            cola = cola.sig;
-            if (cola.token == 116) { // ,
-                EntradaPila(cola.token, cola.lexema);
-                cola = cola.sig;
-                if (cola.token == 118) /* ;*/ {
-                    cola = cola.sig;
-                    Escribir();
+            entradaPila(colaLexemas.token, colaLexemas.lexema);
+            colaLexemas = colaLexemas.sig;
+            if (colaLexemas.token == 116) { // ,
+                entradaPila(colaLexemas.token, colaLexemas.lexema);
+                colaLexemas = colaLexemas.sig;
+                if (colaLexemas.token == 118) /* ;*/ {
+                    colaLexemas = colaLexemas.sig;
+                    escribir();
                 }
             }
-            if (cola.token == 118) {
-                cola = cola.sig;
-                Escribir();
+            if (colaLexemas.token == 118) {
+                colaLexemas = colaLexemas.sig;
+                escribir();
             }
         }
-        if (cola.token == 100) { // Variable
-            EntradaPila(cola.token, cola.lexema);
-            Variable_sin_declarar();
-            cola = cola.sig;
-            if (cola.token == 116) {
-                cola = cola.sig;
-                Escribir();
+        if (colaLexemas.token == 100) { // Variable
+            entradaPila(colaLexemas.token, colaLexemas.lexema);
+            variableSinDeclarar();
+            colaLexemas = colaLexemas.sig;
+            if (colaLexemas.token == 116) {
+                colaLexemas = colaLexemas.sig;
+                escribir();
             }
         } else if (!cadena) {
-            ErrorMensaje(601);
+            mostrarError(601);
         }
     }
 
-    private void Leer() {
-        if (cola.token == 100) {
-            EntradaPila(cola.token, cola.lexema);
-            Variable_sin_declarar();
-            cola = cola.sig;
-            if (cola.token == 116) {
-                cola = cola.sig;
-                Leer();
+    private void leer() {
+        if (colaLexemas.token == 100) {
+            entradaPila(colaLexemas.token, colaLexemas.lexema);
+            variableSinDeclarar();
+            colaLexemas = colaLexemas.sig;
+            if (colaLexemas.token == 116) {
+                colaLexemas = colaLexemas.sig;
+                leer();
             }
         }
     }
 
-    private void Asignacion() {
-        if (cola.token == 119) {// :=
-            Push_pilaInicial(cola.token);
-            EntradaPila(cola.token, cola.lexema);
-            cola = cola.sig;
-            expresion_numerica();
-            Infijo_Postfijo();
-            CodigoIntermedio();
-            if (cola.token == 118) {// ;
-                cola = cola.sig;
-                Inicializar();
+    private void asignacion() {
+        if (colaLexemas.token == 119) {// :=
+            pushPilaInicial(colaLexemas.token);
+            entradaPila(colaLexemas.token, colaLexemas.lexema);
+            colaLexemas = colaLexemas.sig;
+            expresionNumerica1();
+            convertirInfijoPostfijo();
+            generarCodigoIntermedio();
+            if (colaLexemas.token == 118) {// ;
+                colaLexemas = colaLexemas.sig;
+                inicializar();
             }
         } else {
-            ErrorMensaje(600);
+            mostrarError(600);
         }
     }
 
-    private void Mientras() {
-        Expresion_logica();
-        Infijo_Postfijo();
-        Insertar_ListaPolish("D" + (++ContadorWhile), 0);
-        CodigoIntermedio();
-        Insertar_ListaPolish("Brf C" + (ContadorWhile), 0);
-        if (cola.token == 210) { // HACER
-            cola = cola.sig;
-            Inicializar();
-            Insertar_ListaPolish("Bri D" + (ContadorWhile), 0);
-            if (cola.token == 211) { // FIN_MIENTRAS
-                Insertar_ListaPolish("C" + (ContadorWhile), 0);
-                --ContadorWhile;
-                cola = cola.sig;
+    private void mientras() {
+        expresionLogica1();
+        convertirInfijoPostfijo();
+        insertarListaPolish("D" + (++contadorWhile), 0);
+        generarCodigoIntermedio();
+        insertarListaPolish("Brf C" + (contadorWhile), 0);
+        if (colaLexemas.token == 210) { // HACER
+            colaLexemas = colaLexemas.sig;
+            inicializar();
+            insertarListaPolish("Bri D" + (contadorWhile), 0);
+            if (colaLexemas.token == 211) { // FIN_MIENTRAS
+                insertarListaPolish("C" + (contadorWhile), 0);
+                --contadorWhile;
+                colaLexemas = colaLexemas.sig;
             } else {
-                ErrorMensaje(516);
+                mostrarError(516);
             }
         }
     }
 
-    private void Si() {
-        cola   = cola.sig;
-        Lexema = cola.lexema;
-        Expresion_logica();
-        Infijo_Postfijo();
-        CodigoIntermedio();
-        Insertar_ListaPolish("Brf A" + (++ContadorIf), 0);
-        if (cola.token == 206) {// ENTONCES
-            cola = cola.sig;
-            Inicializar();
-            if (cola.token != 208) { // SINO
-                Insertar_ListaPolish("A" + (ContadorIf), 0);
+    private void si() {
+        colaLexemas = colaLexemas.sig;
+        lexemaActual = colaLexemas.lexema;
+        expresionLogica1();
+        convertirInfijoPostfijo();
+        generarCodigoIntermedio();
+        insertarListaPolish("Brf A" + (++contadorIf), 0);
+        if (colaLexemas.token == 206) {// ENTONCES
+            colaLexemas = colaLexemas.sig;
+            inicializar();
+            if (colaLexemas.token != 208) { // SINO
+                insertarListaPolish("A" + (contadorIf), 0);
             }
-            Insertar_ListaPolish("Bri B" + (ContadorIf), 0);
-            if (cola.token == 208) {// SINO
-                cola = cola.sig;
-                Insertar_ListaPolish("A" + (ContadorIf), 0);
-                Inicializar();
+            insertarListaPolish("Bri B" + (contadorIf), 0);
+            if (colaLexemas.token == 208) {// SINO
+                colaLexemas = colaLexemas.sig;
+                insertarListaPolish("A" + (contadorIf), 0);
+                inicializar();
             }
-            if (cola.token == 207) {// FIN_SI
-                Insertar_ListaPolish("B" + (ContadorIf), 0);
-                --ContadorIf;
-                cola = cola.sig;
+            if (colaLexemas.token == 207) {// FIN_SI
+                insertarListaPolish("B" + (contadorIf), 0);
+                --contadorIf;
+                colaLexemas = colaLexemas.sig;
             } else {
-                ErrorMensaje(511);
+                mostrarError(511);
             }
         } else {
-            ErrorMensaje(513);
+            mostrarError(513);
         }
     }
 
-    private void Expresion_logica() {
-        switch (cola.token) {
+    private void expresionLogica1() {
+        switch (colaLexemas.token) {
             case 114 -> {// (
-                cola = cola.sig;
-                Expresion_logica();
-                if (cola.token == 115) {// )
-                    cola = cola.sig;
-                    Exp_logica_1();
+                colaLexemas = colaLexemas.sig;
+                expresionLogica1();
+                if (colaLexemas.token == 115) {// )
+                    colaLexemas = colaLexemas.sig;
+                    expresionLogica2();
                 }
             }
             case 200 -> {// NOT
-                Push_pilaInicial(cola.token);
-                EntradaPila(cola.token, cola.lexema);
-                cola = cola.sig;
-                Expresion_logica();
-                Exp_logica_1();
+                pushPilaInicial(colaLexemas.token);
+                entradaPila(colaLexemas.token, colaLexemas.lexema);
+                colaLexemas = colaLexemas.sig;
+                expresionLogica1();
+                expresionLogica2();
             }
             case 100 -> {// Identificadores
-                if ((cola.sig.token >= 108) && (cola.sig.token <= 113)) {// Operadores Operadores_Relacionales
-                    expresion_relacional();
+                if ((colaLexemas.sig.token >= 108) && (colaLexemas.sig.token <= 113)) {// Operadores Operadores_Relacionales
+                    expresionRelacional();
                 } else {
-                    Exp_logica_1();
+                    expresionLogica2();
                 }
             }
             case 203 ->// true
-                    Exp_logica_1();
+                    expresionLogica2();
             case 204 ->// false
-                    Exp_logica_1();
+                    expresionLogica2();
             default -> {
-                expresion_relacional();
-                Exp_logica_1();
+                expresionRelacional();
+                expresionLogica2();
             }
         }
     }
 
-    private void expresion_relacional() {
-        expresion_numerica();
-        if (cola.token >= 108 && cola.token <= 113) {// Operadores Operadores_Relacionales
-            Push_pilaInicial(cola.token);
-            EntradaPila(cola.token, cola.lexema);
-            cola = cola.sig;
-            expresion_numerica();
+    private void expresionRelacional() {
+        expresionNumerica1();
+        if (colaLexemas.token >= 108 && colaLexemas.token <= 113) {// Operadores Operadores_Relacionales
+            pushPilaInicial(colaLexemas.token);
+            entradaPila(colaLexemas.token, colaLexemas.lexema);
+            colaLexemas = colaLexemas.sig;
+            expresionNumerica1();
         } else {
-            ErrorMensaje(512);
+            mostrarError(512);
         }
     }
 
-    private void Exp_logica_1() {
-        expresion_numerica();
-        if (cola.token >= 200 && cola.token <= 202) {// NOT, AND, OR
-            Push_pilaInicial(cola.token);
-            EntradaPila(cola.token, cola.lexema);
-            cola = cola.sig;
-            Expresion_logica();
-            Exp_logica_1();
+    private void expresionLogica2() {
+        expresionNumerica1();
+        if (colaLexemas.token >= 200 && colaLexemas.token <= 202) {// NOT, AND, OR
+            pushPilaInicial(colaLexemas.token);
+            entradaPila(colaLexemas.token, colaLexemas.lexema);
+            colaLexemas = colaLexemas.sig;
+            expresionLogica1();
+            expresionLogica2();
         }
     }
 
-    private void EntradaPila(Integer Token, String Lexemas) {
-        Tokens.push(Token);
-        this.Lexemas.push(Lexemas);
+    private void entradaPila(Integer Token, String Lexemas) {
+        pilaTokens2.push(Token);
+        this.pilaLexemas.push(Lexemas);
     }
 
-    private void CodigoIntermedio() {
-        Token_Invertidos.push(115);
-        Lexemas_invertidos.push(")");
-        while (!Lexemas.empty() || !Tokens.empty()) { // Se llenan las pilas invertidas.
-            Token_Invertidos.push(Tokens.pop());
-            Lexemas_invertidos.push(Lexemas.pop());
-        }
-        Token_Invertidos.push(114);
-        Lexemas_invertidos.push("(");
-        while (!Token_Invertidos.empty()) {
-            switch (Jerarquia_Operaciones(Token_Invertidos.peek())) { // 221
-                case 0 -> Insertar_ListaPolish(Lexemas_invertidos.pop(), Token_Invertidos.pop());
-                case 1 -> { // :=
-                    Tokens_operandos.push(Token_Invertidos.pop());
-                    Lexemas_operandos.push(Lexemas_invertidos.pop());
-                }
-                case 2 -> { // (
-                    Tokens_operandos.push(Token_Invertidos.pop());
-                    Lexemas_operandos.push(Lexemas_invertidos.pop());
-                }
-                case 3 -> { // )
-                    while (!Tokens_operandos.peek().equals(114)) {
-                        Insertar_ListaPolish(Lexemas_operandos.pop(), Tokens_operandos.pop());
-                    }
-                    Tokens_operandos.pop();
-                    Lexemas_operandos.pop();
-                    Token_Invertidos.pop();
-                    Lexemas_invertidos.pop();
-                } // AND OR
-
-                // NOT
-
-                // operadores relacionales
-
-                // + -
-
-                case 4, 5, 6, 7, 8 -> { // * /
-                    while (Jerarquia_Operaciones(Tokens_operandos.peek()) >= Jerarquia_Operaciones(Token_Invertidos.peek())) {
-                        Insertar_ListaPolish(Lexemas_operandos.pop(), Tokens_operandos.pop());
-                    }
-                    Tokens_operandos.push(Token_Invertidos.pop());
-                    Lexemas_operandos.push(Lexemas_invertidos.pop());
-                }
-            }
-        }
-    }
-
-    private void expresion_numerica() {
-        switch (cola.token) {
+    private void expresionNumerica1() {
+        switch (colaLexemas.token) {
             case 114 -> {
-                Push_pilaInicial(cola.token);
-                EntradaPila(cola.token, cola.lexema);
-                expresion_numerica();
-                if (cola.token == 115) {
-                    Push_pilaInicial(cola.token);
-                    EntradaPila(cola.token, cola.lexema);
-                    expresion_numerica2();
+                pushPilaInicial(colaLexemas.token);
+                entradaPila(colaLexemas.token, colaLexemas.lexema);
+                expresionNumerica1();
+                if (colaLexemas.token == 115) {
+                    pushPilaInicial(colaLexemas.token);
+                    entradaPila(colaLexemas.token, colaLexemas.lexema);
+                    expresionNumerica2();
                 }
             }
             case 105 -> {// -
-                Push_pilaInicial(cola.token);
-                EntradaPila(cola.token, cola.lexema);
-                expresion_numerica();
-                expresion_numerica2();
+                pushPilaInicial(colaLexemas.token);
+                entradaPila(colaLexemas.token, colaLexemas.lexema);
+                expresionNumerica1();
+                expresionNumerica2();
             }
             case 100 -> {
-                Variable_sin_declarar();
-                Push_pilaInicial(cola.token);
-                EntradaPila(cola.token, cola.lexema);
-                cola = cola.sig;
-                expresion_numerica2();
+                variableSinDeclarar();
+                pushPilaInicial(colaLexemas.token);
+                entradaPila(colaLexemas.token, colaLexemas.lexema);
+                colaLexemas = colaLexemas.sig;
+                expresionNumerica2();
             }
             case 203, 204 -> {// TRUE
-                Push_pilaInicial(221);
-                Tokens.push(221);
-                Lexemas.push(cola.lexema);
-                cola = cola.sig;
-                Exp_logica_1();
+                pushPilaInicial(221);
+                pilaTokens2.push(221);
+                pilaLexemas.push(colaLexemas.lexema);
+                colaLexemas = colaLexemas.sig;
+                expresionLogica2();
             }
             case 103, 102, 101 -> { // Cadena o string
-                Push_pilaInicial(cola.token);
-                EntradaPila(cola.token, cola.lexema);
-                cola = cola.sig;
-                expresion_numerica2();
+                pushPilaInicial(colaLexemas.token);
+                entradaPila(colaLexemas.token, colaLexemas.lexema);
+                colaLexemas = colaLexemas.sig;
+                expresionNumerica2();
             }
             // DECIMAL o Double
             // ENTERO o Int
@@ -480,113 +437,76 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         }
     }
 
-    private void expresion_numerica2() {
-        if (cola.token >= 104 && cola.token <= 107) {// + - * /
-            Push_pilaInicial(cola.token);
-            EntradaPila(cola.token, cola.lexema);
-            cola = cola.sig;
-            expresion_numerica();
-            expresion_numerica2();
+    private void expresionNumerica2() {
+        if (colaLexemas.token >= 104 && colaLexemas.token <= 107) {// + - * /
+            pushPilaInicial(colaLexemas.token);
+            entradaPila(colaLexemas.token, colaLexemas.lexema);
+            colaLexemas = colaLexemas.sig;
+            expresionNumerica1();
+            expresionNumerica2();
         }
     }
 
-    private void Dec_variable() {
-        if (cola.token == 100) { // variable
-            if (cola.lexema.equals(nombrePrograma)) {
-                Error_semantico(517);
+    private void declaracionVariables() {
+        if (colaLexemas.token == 100) { // variable
+            if (colaLexemas.lexema.equals(nombrePrograma)) {
+                errorSemantico(517);
             } else {
-                Variable_multideclarada();
-                lexemaAux = cola.lexema;
+                variableMultideclarada();
+                lexemaAuxiliar = colaLexemas.lexema;
             }
-            cola = cola.sig;
-            if (cola.token == 117) {// :
-                cola = cola.sig;
-                Nombre_tipo_simple();
-                Insertar_Variables(lexemaAux, tipo);
+            colaLexemas = colaLexemas.sig;
+            if (colaLexemas.token == 117) {// :
+                colaLexemas = colaLexemas.sig;
+                nombreTipoSimple();
+                Insertar_Variables(lexemaAuxiliar, tipoActual);
 
-                if (cola.token == 118) {// ;
-                    cola = cola.sig;
-                    Dec_variable();
+                if (colaLexemas.token == 118) {// ;
+                    colaLexemas = colaLexemas.sig;
+                    declaracionVariables();
                 }
             } else {
-                ErrorMensaje(515);
+                mostrarError(515);
             }
         } else {
-            ErrorMensaje(515);
+            mostrarError(515);
         }
     }
 
-    private void Nombre_tipo_simple() {
-        switch (cola.token) {
+    private void nombreTipoSimple() {
+        switch (colaLexemas.token) {
             case 218 -> {//Entero
-                cola.token = 101;
-                tipo = cola.token;
-                cola = cola.sig;
+                colaLexemas.token = 101;
+                tipoActual = colaLexemas.token;
+                colaLexemas = colaLexemas.sig;
             }
             case 219 -> {//Decimal
-                cola.token = 102;
-                tipo = cola.token;
-                cola = cola.sig;
+                colaLexemas.token = 102;
+                tipoActual = colaLexemas.token;
+                colaLexemas = colaLexemas.sig;
             }
             case 220 -> {//Cadena
-                cola.token = 103;
-                tipo = cola.token;
-                cola = cola.sig;
+                colaLexemas.token = 103;
+                tipoActual = colaLexemas.token;
+                colaLexemas = colaLexemas.sig;
             }
             case 221 -> {//Boolean
-                tipo = cola.token;
-                cola = cola.sig;
+                tipoActual = colaLexemas.token;
+                colaLexemas = colaLexemas.sig;
             }
-            default -> ErrorMensaje(514);
+            default -> mostrarError(514);
         }
     }
 
-    private void Infijo_Postfijo() {
-        Invertida.push(115);//)
-        while (!Inicial.empty())
-            Push_pilaInvertida(Inicial.pop());
-
-        Push_pilaInvertida(114);//(
-        while (!Invertida.empty()) {
-            switch (Jerarquia_Operaciones(Invertida.peek())) {
-                case 0, 9 -> Push_pilaSalidas(Invertida.pop());
-                case 1, 2 -> Push_pilaOperadores(Invertida.pop());
-                case 3 -> { // )
-                    while (!Operadores.peek().equals(114)) {
-                        Push_pilaSalidas(Operadores.pop()); // postfijo
-                    }
-                    Operadores.pop();
-                    Invertida.pop();
-                } // AND OR
-
-                // NOT
-
-                // Operadores_Relacionales
-
-                // + -
-
-                case 4, 5, 6, 7, 8 -> { // * /
-                    while (Jerarquia_Operaciones(Operadores.peek()) >= Jerarquia_Operaciones(Invertida.peek()))
-                        Push_pilaSalidas(Operadores.pop());
-
-                    Push_pilaOperadores(Invertida.pop());
-                }
-            }
-        }
-        IncompatibilidadTipos(Salida_lista);
-        Salida_lista.removeAllElements();
-        aux_salida.removeAllElements();
-    }
-
-    private void IncompatibilidadTipos(Stack lista) {
+    private void incompatibilidadTipos(Stack lista) {
         boolean error = false;
         int columna_fila = 0, fila_lista = 0, operando1, operando2;
 
-        for (int i = 0; i < Salida_lista.size(); i++) {
+        for (int i = 0; i < pilaSalida.size(); i++) {
             int operador = (int) lista.get(i);
             if ((operador >= 104 && operador <= 113) || (operador == 119) || (operador >= 200 && operador <= 202)) {
-                operando1 = aux_salida.pop();
-                operando2 = aux_salida.pop();
+                operando1 = pilaSalidaAux.pop();
+                operando2 = pilaSalidaAux.pop();
 
                 switch (operando1) {
                     case 101 -> columna_fila = 0;
@@ -602,168 +522,332 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
                 }
                 switch (operador) {
                     case 104 -> {
-                        if (Tipos.Sumas[fila_lista][columna_fila] == 0) {
+                        if (SistemaTipos.Sumas[fila_lista][columna_fila] == 0) {
                             error = true;
                         } else {
-                            aux_salida.push(Tipos.Sumas[fila_lista][columna_fila]);
+                            pilaSalidaAux.push(SistemaTipos.Sumas[fila_lista][columna_fila]);
                         }
                     }
                     case 105 -> {
-                        if (Tipos.Resta_Multiplicacion[fila_lista][columna_fila] == 0) {
+                        if (SistemaTipos.Resta_Multiplicacion[fila_lista][columna_fila] == 0) {
                             error = true;
                         } else {
-                            aux_salida.push(Tipos.Resta_Multiplicacion[fila_lista][columna_fila]);
+                            pilaSalidaAux.push(SistemaTipos.Resta_Multiplicacion[fila_lista][columna_fila]);
                         }
                     }
                     case 106 -> {
-                        if (Tipos.Resta_Multiplicacion[fila_lista][columna_fila] == 0) {
+                        if (SistemaTipos.Resta_Multiplicacion[fila_lista][columna_fila] == 0) {
                             error = true;
                         } else {
-                            aux_salida.push(Tipos.Resta_Multiplicacion[fila_lista][columna_fila]);
+                            pilaSalidaAux.push(SistemaTipos.Resta_Multiplicacion[fila_lista][columna_fila]);
                         }
                     }
                     case 107 -> {
-                        if (Tipos.Divisiones[fila_lista][columna_fila] == 0) {
+                        if (SistemaTipos.Divisiones[fila_lista][columna_fila] == 0) {
                             error = true;
                         } else {
-                            aux_salida.push(Tipos.Divisiones[fila_lista][columna_fila]);
+                            pilaSalidaAux.push(SistemaTipos.Divisiones[fila_lista][columna_fila]);
                         }
                     }
                     case 119 -> {
-                        if (!Tipos.Asignaciones[fila_lista][columna_fila]) {
+                        if (!SistemaTipos.Asignaciones[fila_lista][columna_fila]) {
                             error = true;
                         }
                     }
                     case 110, 108, 109, 111 -> {
-                        if (Tipos.Operadores_Relacionales[fila_lista][columna_fila] == 0) {
+                        if (SistemaTipos.Operadores_Relacionales[fila_lista][columna_fila] == 0) {
                             error = true;
                         } else {
-                            aux_salida.push(Tipos.Operadores_Relacionales[fila_lista][columna_fila]);
+                            pilaSalidaAux.push(SistemaTipos.Operadores_Relacionales[fila_lista][columna_fila]);
                         }
                     }
                     case 112, 113 -> {
-                        if (Tipos.Igual_Diferente[fila_lista][columna_fila] == 0) {
+                        if (SistemaTipos.Igual_Diferente[fila_lista][columna_fila] == 0) {
                             error = true;
                         } else {
-                            aux_salida.push(Tipos.Igual_Diferente[fila_lista][columna_fila]);
+                            pilaSalidaAux.push(SistemaTipos.Igual_Diferente[fila_lista][columna_fila]);
                         }
                     }// NOT
                     // AND
                     case 200, 201, 202 -> {// OR
-                        if (!Tipos.Operadores_Logicos[fila_lista][columna_fila]) {
+                        if (!SistemaTipos.Operadores_Logicos[fila_lista][columna_fila]) {
                             error = true;
                         } else {
-                            aux_salida.push(221);
+                            pilaSalidaAux.push(221);
                         }
                     }
                 }
             } else {
-                aux_salida.push(operador);
+                pilaSalidaAux.push(operador);
             }
             if (error) { // p.linea
-                Error_semantico(520);
+                errorSemantico(520);
                 break;
             }
         }
     }
 
-    private void Variable_multideclarada() {
-        nodo = cab_var;
-        while (nodo != null) {
-            if (cola.lexema.equals(nodo.lexema)) {
-                Error_semantico(518);
+    private void variableMultideclarada() {
+        nodoVariable = cab_var;
+        while (nodoVariable != null) {
+            if (colaLexemas.lexema.equals(nodoVariable.lexema)) {
+                errorSemantico(518);
             }
-            nodo = nodo.sig;
+            nodoVariable = nodoVariable.sig;
         }
-        nodo = cab_var;
+        nodoVariable = cab_var;
     }
 
-    private void Variable_sin_declarar() {
-        nodo = cab_var;
+    private void variableSinDeclarar() {
+        nodoVariable = cab_var;
         boolean Validar_variable = false;
-        while (nodo != null) {
-            if (cola.lexema.equals(nodo.lexema)) {
+        while (nodoVariable != null) {
+            if (colaLexemas.lexema.equals(nodoVariable.lexema)) {
                 Validar_variable = true;
-                cola.token       = nodo.token;
+                colaLexemas.token       = nodoVariable.token;
                 break;
             }
-            nodo = nodo.sig;
+            nodoVariable = nodoVariable.sig;
         }
         if (!Validar_variable) {
-            Error_semantico(519);
+            errorSemantico(519);
         }
     }
 
-    private void BuscarCadenaPolish() {
-        String Cadena = "";
-        NodoVar aux_buscar = cab_polish;
-        while (aux_buscar != null) {
-            if (aux_buscar.token == 103) {
-                Cadena = aux_buscar.lexema;
-                aux_buscar = aux_buscar.sig;
-                if (aux_buscar.token == 216) {
-                    VariablesCadenas.add(Cadena);
+    // Metodo para convertir la expresión infija a postfija
+    private void convertirInfijoPostfijo() {
+        pilaInvertida.push(115); // Agregar el token ')' a la pila invertida
+
+        // Llenar las pilas invertidas con los tokens y lexemas
+        while (!pilaInicial.empty())
+            insertarPilaInvertida(pilaInicial.pop());
+
+        pilaInvertida.push(114); // Agregar el token '(' a la pila invertida
+
+        // Procesar la pila invertida y generar la expresión postfija
+        while (!pilaInvertida.empty()) {
+            switch (obtenerJerarquiaOperacion(pilaInvertida.peek())) {
+                case 0, 9 -> pushPilaSalidas(pilaInvertida.pop()); // Operandos y paréntesis
+                case 1, 2 -> pushPilaOperadores(pilaInvertida.pop()); // Operadores :=
+                case 3 -> { // )
+                    // Desapilar operadores hasta encontrar el (
+                    while (!pilaOperadores.peek().equals(114)) {
+                        pushPilaSalidas(pilaOperadores.pop()); // Agregar operadores a la salida (postfijo)
+                    }
+                    pilaOperadores.pop(); // Desapilar (
+                    pilaInvertida.pop(); // Desapilar )
+                }
+                // Operadores lógicos y aritméticos
+                case 4, 5, 6, 7, 8 -> {
+                    // Desapilar operadores de mayor jerarquía y agregarlos a la salida (postfijo)
+                    while (obtenerJerarquiaOperacion(pilaOperadores.peek()) >= obtenerJerarquiaOperacion(pilaInvertida.peek())) {
+                        pushPilaSalidas(pilaOperadores.pop());
+                    }
+                    pushPilaOperadores(pilaInvertida.pop()); // Apilar operador actual
                 }
             }
-            aux_buscar = aux_buscar.sig;
+        }
+
+        incompatibilidadTipos(pilaSalida); // Realizar verificaciones de incompatibilidad de tipos
+        pilaSalida.removeAllElements(); // Limpiar la lista de salida
+        pilaSalidaAux.removeAllElements(); // Limpiar la lista auxiliar de salida
+    }
+
+    // Método para generar el código intermedio
+    private void generarCodigoIntermedio() {
+        pilaTokensInvertidos.push(115); // Agregar el token ')' a la pila invertida
+        pilaLexemasInvertidos.push(")");
+
+        // Llenar las pilas invertidas con los tokens y lexemas
+        while (!pilaLexemas.empty() || !pilaTokens2.empty()) {
+            pilaTokensInvertidos.push(pilaTokens2.pop());
+            pilaLexemasInvertidos.push(pilaLexemas.pop());
+        }
+
+        pilaTokensInvertidos.push(114); // Agregar el token '(' a la pila invertida
+        pilaLexemasInvertidos.push("(");
+
+        // Procesar la pila invertida y generar el código intermedio
+        while (!pilaTokensInvertidos.empty()) {
+            int jerarquia = obtenerJerarquiaOperacion(pilaTokensInvertidos.peek());
+
+            switch (jerarquia) {
+                case 0 -> insertarListaPolish(pilaLexemasInvertidos.pop(), pilaTokensInvertidos.pop()); // Operandos
+                case 1, 2 -> { // :=
+                    pilaTokensOperandos.push(pilaTokensInvertidos.pop());
+                    pilaLexemasOperandos.push(pilaLexemasInvertidos.pop());
+                }
+                case 3 -> { // )
+                    // Desapilar operandos hasta encontrar el (
+                    while (!pilaTokensOperandos.peek().equals(114)) {
+                        insertarListaPolish(pilaLexemasOperandos.pop(), pilaTokensOperandos.pop());
+                    }
+                    pilaTokensOperandos.pop(); // Desapilar (
+                    pilaLexemasOperandos.pop();
+                    pilaTokensInvertidos.pop(); // Desapilar )
+                    pilaLexemasInvertidos.pop();
+                }
+                // Operadores lógicos y aritméticos
+                case 4, 5, 6, 7, 8 -> {
+                    // Desapilar operadores de mayor jerarquía y agregarlos a la lista Polish
+                    while (obtenerJerarquiaOperacion(pilaTokensOperandos.peek()) >= obtenerJerarquiaOperacion(pilaTokensInvertidos.peek())) {
+                        insertarListaPolish(pilaLexemasOperandos.pop(), pilaTokensOperandos.pop());
+                    }
+                    pilaTokensOperandos.push(pilaTokensInvertidos.pop()); // Apilar operador actual
+                    pilaLexemasOperandos.push(pilaLexemasInvertidos.pop());
+                }
+            }
         }
     }
 
-    private String BuscarLexemaPolish(String Lexema) {
-        String lexema = "";
-        NodoVar Aux_polish = cab_polish;
-        NodoVar AuxBuscar = cab_polish;
-        while (AuxBuscar != null) {
-            if (AuxBuscar.lexema.equals(Lexema)) {
-                Aux_polish = AuxBuscar.sig;
-                if (Aux_polish.lexema.startsWith("'")) {
-                    lexema = Aux_polish.lexema;
+    //***********************************************************************************************************************
+    // GENERACION DEL CODIGO ENSAMBLADOR
+    //***********************************************************************************************************************
+
+    // Reemplaza una cadena en el texto ensamblador
+    private String reemplazar(String buscar, String reemplazar) {
+        return textoEnsamblador.replaceAll(buscar, reemplazar);
+    }
+
+    // Buscar cadenas en la lista polish y apilarlas
+    private void buscarCadenas() {
+        String cadena = "";
+        NodoVar nodoActual = cabeceraPolish;
+
+        while (nodoActual != null) {
+
+            if (nodoActual.token == 103) {  // si es cadena
+                cadena = nodoActual.lexema;
+                nodoActual = nodoActual.sig;
+
+                if (nodoActual.token == 216)    // si el siguiente token es '
+                    pilaVariablesCadenas.add(cadena);   // apilar cadena
+            }
+
+            nodoActual = nodoActual.sig;    // siguiente nodo
+        }
+    }
+
+    // Buscar lexema en la lista polish
+    private String buscarLexema(String Lexema) {
+        String lexemaEncontrado = "";
+        NodoVar nodoPolishActual;
+        NodoVar nodoBuscar = this.cabeceraPolish;
+
+        while (nodoBuscar != null) {
+
+            if (nodoBuscar.lexema.equals(Lexema)) { // lexema encontrado
+                nodoPolishActual = nodoBuscar.sig;  // avanzar nodo
+
+                if (nodoPolishActual.lexema.startsWith("'")) {  // siguiente lexema empieza con '
+                    lexemaEncontrado = nodoPolishActual.lexema; // almacenar lexema
                     break;
                 }
             }
-            AuxBuscar = AuxBuscar.sig;
+
+            nodoBuscar = nodoBuscar.sig;    // avanzar nodo
         }
-        return lexema;
+
+        return lexemaEncontrado;
     }
 
-    private void PiePaginaASM() {
-            textoEnsamblador += """
-                    RET
-                    METODOS  ENDP
-                    
-                    END""";
+    private void operacionLogicaAritmeticaASM(String opMacro) {
+        String op2 = this.pilaPolish.pop();
+        String op1 = this.pilaPolish.pop();
+
+        this.textoEnsamblador += opMacro + " " + op1 + ", " + op2 + ", resultado" + this.contadorGeneral + "\n";
+        this.pilaPolish.push("resultado" + this.contadorGeneral);
+        this.textoEnsamblador = reemplazar(";/Var",
+                "resultado" + this.contadorGeneral + " dw ?\n;/Var");
     }
 
-    private void CabeceraASM() {
+    private void operacionAsignacionASM() {
+        String op2 = pilaPolish.pop();
+        String op1 = pilaPolish.pop();
+
+        if (existeVariableString(op1))
+            textoEnsamblador = reemplazar(op1 + ";/auxiliar ", "\n" + op1 + " db " + op2);
+        else
+            textoEnsamblador += "Asignar" + " " + op1 + ", " + op2 + "\n";
+
+        textoEnsamblador = this.reemplazar("VERDADERO", "1");
+        textoEnsamblador = this.reemplazar("FALSO", "0");
+    }
+
+    private boolean existeVariableString(String variable) {
+        for (String variableString : this.pilaVariablesStrings)
+            if (variableString.equals(variable))
+                return true;
+
+        return false;
+    }
+
+    private void operacionLecturaASM() {
+        String op = pilaPolish.pop();
+
+        if (existeVariableString(op))
+            textoEnsamblador += "LeerCadena" + " " + op + "\n";
+        else
+            textoEnsamblador += "LeerNumero" + " " + op + "\n";
+    }
+
+    private void operacionEscrituraASM() {
+        String op = pilaPolish.pop();
+
+        if (existeVariableString(op) && !op.startsWith("'"))
+            textoEnsamblador += "EscribirCadena" + " " + op + "\n";
+        else if (!existeVariableString(op) && !op.startsWith("'"))
+            textoEnsamblador += "EscribirNumero" + " " + op + "\n";
+        else
+            textoEnsamblador += "EscribirCadena" + " cadena" + (contadorCadenas++) + "\n";
+    }
+
+    private void etiquetasSaltos() {
+        if (operadorActual.startsWith("Brf")) {
+            String p = operadorActual.substring(4, 6);
+            textoEnsamblador += "JF" + " Resultado" + (contadorGeneral - 1) + ", " + p + "\n";
+        } else if (operadorActual.startsWith("Bri")) {
+            String p = operadorActual.substring(4, 6);
+            textoEnsamblador += "JMP" + " " + p + "\n";
+        } else if (operadorActual.startsWith("A") || operadorActual.startsWith("B")
+                || operadorActual.startsWith("C") || operadorActual.startsWith("D")) {
+            String p = operadorActual.substring(0, 2);
+            textoEnsamblador += p + ":\n";
+        }
+
+        contadorGeneral++;
+    }
+
+    // Generar codigo ensamblador
+    private void generarCodigoEnsamblador() {
+        // cabecera
         textoEnsamblador = """
                 INCLUDE macros.MAC
                 .MODEL SMALL
                 .STACK 100h
                 .DATA
                 """;
-    }
 
-    private void GenerarCodigoObjeto() {
-        CabeceraASM();
-        p_var = cab_var;
-        BuscarCadenaPolish();
+        this.p_var = this.cab_var;
+        this.buscarCadenas();
+
         while (p_var != null) {
-            if (p_var.token == 103) { // Cadena o string
-                textoEnsamblador += p_var.lexema + " db " + BuscarLexemaPolish(p_var.lexema) + ", 13,10,'$'\n";
-                VariablesStrings.push(p_var.lexema);
-            } else {
-                textoEnsamblador += p_var.lexema + " db" + " ?\n";
+            if (p_var.token == 103) { // cadena o string
+                textoEnsamblador += p_var.lexema + " db " + buscarLexema(p_var.lexema) + ", 13,10,'$'\n";
+                pilaVariablesStrings.push(p_var.lexema);
+            } else {    // numerica
+                textoEnsamblador += p_var.lexema + " dw ?\n";
             }
             p_var = p_var.sig;
         }
 
         int contadorCadenas = 1;
 
-        for (int i = 0; i < VariablesCadenas.size(); i++) {
-            textoEnsamblador += "cadena" + contadorCadenas++ + " db " + VariablesCadenas.get(i) + ", 13, 10, '$'\n";
+        for (String pilaVariablesCadena : pilaVariablesCadenas) {
+            textoEnsamblador += "cadena" + (contadorCadenas++) + " db " + pilaVariablesCadena + ", 13, 10, '$'\n";
         }
 
-        textoEnsamblador += """
+        this.textoEnsamblador += """
                 impresion db ?
                 ;/Var
                 
@@ -779,44 +863,52 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
                 METODOS PROC
                 """;
 
-        aux_polish = cab_polish;
-        while (aux_polish != null) {
-            if (aux_polish.token >= 104 && aux_polish.token < 114 || aux_polish.token == 119
-                    || aux_polish.token >= 200 && aux_polish.token <= 202 || aux_polish.token == 215
-                    || aux_polish.token == 216 || aux_polish.token == 0) {
-                operador = aux_polish.lexema;
+        colaPolish = cabeceraPolish;
+        while (colaPolish != null) {
+            if (colaPolish.token >= 104 && colaPolish.token < 114 || colaPolish.token == 119
+                    || colaPolish.token >= 200 && colaPolish.token <= 202 || colaPolish.token == 215
+                    || colaPolish.token == 216 || colaPolish.token == 0) {
+                operadorActual = colaPolish.lexema;
 
-                switch (operador) { // nombres de las macros
-                    case "+" -> OperandosAsm("Sumar");
-                    case "-" -> OperandosAsm("Restar");
-                    case "*" -> OperandosAsm("Multiplicar");
-                    case "/" -> OperandosAsm("Dividir");
-                    case ":=" -> OpAsignacionAsm("Asignar");
-                    case "LEER" -> OpLeerAsm("Leer");
-                    case "ESCRIBIR" -> OpEscribirAsm("EscribirCadena", "EscribirNumero");
-                    case "=" -> OperandosAsm("IgualQue");
-                    case ">" -> OperandosAsm("MayorQue");
-                    case "<" -> OperandosAsm("MenorQue");
-                    case ">=" -> OperandosAsm("MayorIgualQue");
-                    case "<=" -> OperandosAsm("MenorIgualQue");
-                    case "<>" -> OperandosAsm("DiferenteQue");
+                switch (operadorActual) { // nombres de las macros
+                    case "+" -> operacionLogicaAritmeticaASM("Sumar");
+                    case "-" -> operacionLogicaAritmeticaASM("Restar");
+                    case "*" -> operacionLogicaAritmeticaASM("Multiplicar");
+                    case "/" -> operacionLogicaAritmeticaASM("Dividir");
+                    case ":=" -> operacionAsignacionASM();
+                    case "LEER" -> operacionLecturaASM();
+                    case "ESCRIBIR" -> operacionEscrituraASM();
+                    case "=" -> operacionLogicaAritmeticaASM("IgualQue");
+                    case ">" -> operacionLogicaAritmeticaASM("MayorQue");
+                    case "<" -> operacionLogicaAritmeticaASM("MenorQue");
+                    case ">=" -> operacionLogicaAritmeticaASM("MayorIgualQue");
+                    case "<=" -> operacionLogicaAritmeticaASM("MenorIgualQue");
+                    case "<>" -> operacionLogicaAritmeticaASM("DiferenteQue");
                 }
-                Saltos_Etiquetas("JF", "JMP");
+                etiquetasSaltos();
             } else {
-                buscarPolish.push(aux_polish.lexema);
+                pilaPolish.push(colaPolish.lexema);
             }
-            aux_polish = aux_polish.sig;
-        }
-        PiePaginaASM();
 
-        System.out.println("\n<<< CODIGO INTERMEDIO >>>");
+            colaPolish = colaPolish.sig;
+        }
+
+        // pie de pagina
+        textoEnsamblador += """
+                    RET
+                    METODOS ENDP
+                    
+                    END""";
+
+        System.out.println("\n<<< CODIGO ENSAMBLADOR >>>");
         System.out.println(textoEnsamblador);
 
-        GenerarArchivoAsm();
-        //CompilarYEjecutar();
+        //this.generarArchivoEnsamblador();
+        //this.compilarYEjecutar();
     }
 
-    private void GenerarArchivoAsm() {
+    // Generar archivo ensamblador resultante
+    private void generarArchivoEnsamblador() {
         final String direccionArchivo = direccionSalida + "\\" + nombrePrograma.toLowerCase() + ".asm"; // direccion absoluta
 
         // crear archivo
@@ -833,7 +925,8 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         }
     }
 
-    private void CompilarYEjecutar() {
+    // Compilar archivo previamente generado y ejecutarlo
+    private void compilarYEjecutar() {
         // compilar y ejecutar en dosbox
         try {
             String[] cmd = {                                    // comando a ejecutar
@@ -852,91 +945,5 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         }
     }
 
-    private void OperandosAsm(String OperadoresMacro) {
-        String operando2 = buscarPolish.pop();
-        String operando1 = buscarPolish.pop();
-
-        textoEnsamblador += OperadoresMacro + " " + operando1 + "," + operando2 + ", resultado" + contador + "\n";
-
-        resultadoASM = ("resultado" + contador);
-        buscarPolish.push(resultadoASM);
-        textoEnsamblador = Cambiar(";/Var", "resultado" + contador + " db ?\n;/Var");
-    }
-
-    private void OpAsignacionAsm(String Macro) {
-        String operador2 = buscarPolish.pop();
-        String operador1 = buscarPolish.pop();
-        boolean bandera = false;
-        for (int i = 0; i < VariablesStrings.size(); i++) {
-            if (VariablesStrings.get(i).equals(operador1)) {
-                textoEnsamblador = Cambiar("" + operador1 + ";/auxiliar ", "\n" + operador1 + " db " + operador2);
-                bandera          = true;
-                break;
-            }
-        }
-        if (!bandera) {
-            textoEnsamblador += "" + Macro + " " + operador1 + "," + operador2 + "\n";
-        }
-    }
-
-    private void OpLeerAsm(String LeerMacro) {
-        String operador1 = buscarPolish.pop();
-
-        boolean bandera = false;
-        for (String variablesString : VariablesStrings) {
-            if (variablesString.equals(operador1)) {
-                bandera = true;
-                break;
-            }
-        }
-        if (bandera) {
-            System.out.println(operador1);
-            String Cadena = " " + operador1;
-            boolean ContieneCadena = textoEnsamblador.contains(Cadena);
-            if (ContieneCadena) {
-                textoEnsamblador = Cambiar(Cadena, "\n" + Cadena);
-                textoEnsamblador = Cambiar(";/auxiliar", " db 0");
-            }
-        }
-        textoEnsamblador += "" + LeerMacro + " " + operador1 + "\n";
-    }
-
-    private void OpEscribirAsm(String EscribirLinea, String Escribir) {
-        String operador1 = buscarPolish.pop();
-
-        boolean esString = false;
-
-        for (String variablesString : VariablesStrings)
-            if (variablesString.equals(operador1)) {
-                esString = true;
-                break;
-            }
-
-        if (esString && !operador1.startsWith("'"))
-            textoEnsamblador += EscribirLinea + " " + operador1 + "\n";
-        else if (!esString && !operador1.startsWith("'"))
-            textoEnsamblador += Escribir + " " + operador1 + "\n";
-        else
-            textoEnsamblador += EscribirLinea + " cadena" + (contadorcadenas++) + "\n";
-    }
-
-    private void Saltos_Etiquetas(String JF, String JMP) {
-        if (operador.startsWith("Brf")) {
-            String p = operador.substring(4, 6);
-            int auxiliar_Contador = contador;
-            textoEnsamblador += JF + " Resultado" + (auxiliar_Contador - 1) + "," + p + "\n";
-        } else if (operador.startsWith("Bri")) {
-            String p = operador.substring(4, 6);
-            textoEnsamblador += JMP + " " + p + "\n";
-        } else if (operador.startsWith("A") || operador.startsWith("B")
-                || operador.startsWith("C") || operador.startsWith("D")) {
-            String p = operador.substring(0, 2);
-            textoEnsamblador += p + ":\n";
-        }
-        contador++;
-    }
-
-    private String Cambiar(String buscar, String reemplazar) {
-        return textoEnsamblador.replaceAll(buscar, reemplazar);
-    }
+    //***********************************************************************************************************************
 }

@@ -2,19 +2,23 @@ ALGORITMO HOLA() ES
 
 a: ENTERO;
 b: ENTERO;
-c: CADENA
+c: CADENA;
+e: LOGICO
 
 INICIO
 
-    a := 5;
-    b := 1;
+    a := 5 + 3 - 15;
+    b := 1998;
     c := '15WASD';
+    e := VERDADERO;
 
-    SI (b = 1) ENTONCES
-        SI (a <> 5) ENTONCES
-            ESCRIBIR a
+    SI (a = b) ENTONCES
+        SI (a <> 1999) ENTONCES
+            LEER b;
+            ESCRIBIR b
         SINO
-            ESCRIBIR '15'
+            LEER c;
+            ESCRIBIR c
         FIN_SI
     SINO
         ESCRIBIR b

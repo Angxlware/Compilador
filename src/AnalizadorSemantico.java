@@ -1,16 +1,16 @@
 import java.util.Stack;
 
 public class AnalizadorSemantico {
-    Stack<Integer> Inicial = new Stack<>(), Invertida = new Stack<>(), Operadores = new Stack<>();
-    Stack<Integer> Salida_lista = new Stack<>(), aux_salida = new Stack<>();
+    Stack<Integer> pilaInicial = new Stack<>(), pilaInvertida = new Stack<>(), pilaOperadores = new Stack<>();
+    Stack<Integer> pilaSalida = new Stack<>(), pilaSalidaAux = new Stack<>();
 
     // Listas de Tokens
-    Stack<Integer> Token_Invertidos = new Stack<>(), Tokens = new Stack<>(), Tokens_operandos = new Stack<>();
+    Stack<Integer> pilaTokensInvertidos = new Stack<>(), pilaTokens2 = new Stack<>(), pilaTokensOperandos = new Stack<>();
 
     // Listas de Lexemas
-    Stack<String> Lexemas_invertidos = new Stack<>(), Lexemas = new Stack<>(), Lexemas_operandos = new Stack<>();
+    Stack<String> pilaLexemasInvertidos = new Stack<>(), pilaLexemas = new Stack<>(), pilaLexemasOperandos = new Stack<>();
 
-    NodoVar p_var, cab_var, cab_polish, aux_polish = null;
+    NodoVar p_var, cab_var, cabeceraPolish, colaPolish = null;
 
     void Insertar_Variables(String lexema, int token) {
         NodoVar nodo_variable = new NodoVar(lexema, token);
@@ -23,7 +23,7 @@ public class AnalizadorSemantico {
         }
     }
 
-    void Imprimir_Listavariables() {
+    void imprimirListaVariables() {
         System.out.println("\n<<< VARIABLES DECLARADAS >>>");
         System.out.printf("%-15s %-5s\n", "Nombre", "Tipo");
 
@@ -35,7 +35,7 @@ public class AnalizadorSemantico {
         }
     }
 
-    int Jerarquia_Operaciones(int operador) {
+    int obtenerJerarquiaOperacion(int operador) {
         int importancia = 0;
         //*                   /
         if ((operador == 106) || (operador == 107)) {
@@ -71,44 +71,43 @@ public class AnalizadorSemantico {
         return importancia;
     }
 
-    void Push_pilaInicial(int token) {
-        Inicial.push(token);
+    void pushPilaInicial(int token) {
+        pilaInicial.push(token);
     }
 
-    void Push_pilaSalidas(int token) {
-        Salida_lista.push(token);
+    void pushPilaSalidas(int token) {
+        pilaSalida.push(token);
     }
 
-    void Push_pilaInvertida(int token) {
-        Invertida.push(token);
+    void insertarPilaInvertida(int token) {
+        pilaInvertida.push(token);
     }
 
-    void Push_pilaOperadores(int token) {
-        Operadores.push(token);
+    void pushPilaOperadores(int token) {
+        pilaOperadores.push(token);
     }
 
-    void Insertar_ListaPolish(String lexema, int token) {
+    public void insertarListaPolish(String lexema, int token) {
         NodoVar NodoPolish = new NodoVar(lexema, token);
-        if (cab_polish == null) {
-            cab_polish = NodoPolish;
-            aux_polish = cab_polish;
+        if (cabeceraPolish == null) {
+            cabeceraPolish = NodoPolish;
+            colaPolish = cabeceraPolish;
         } else {
-            aux_polish.sig = NodoPolish;
-            aux_polish     = NodoPolish;
+            colaPolish.sig = NodoPolish;
+            colaPolish = NodoPolish;
         }
     }
 
-    void Imprimir_ListaPolish() {
-        System.out.println("\n<<< LISTA POLISH >>>");
+    public void imprimirListaPolish() {
+        System.out.println("\n<<< LISTA POLISH RESULTANTE >>>");
         System.out.printf("%-15s %-3s\n", "Lexema", "Token");
 
-        aux_polish = cab_polish;
-        int i = 0;
+        colaPolish = cabeceraPolish;
 
-        while (aux_polish != null) {
-            System.out.printf("%-15s %-3s\n", aux_polish.lexema, (aux_polish.token != 0) ? aux_polish.token : "");
+        while (colaPolish != null) {
+            System.out.printf("%-15s %-3s\n", colaPolish.lexema, (colaPolish.token != 0) ? colaPolish.token : "");
 
-            aux_polish = aux_polish.sig;
+            colaPolish = colaPolish.sig;
         }
     }
 }
