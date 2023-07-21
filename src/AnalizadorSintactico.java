@@ -872,21 +872,21 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         String operando1 = this.pilaOperandos.pop();
 
         // folding
-        try {
+        /*try {
             int resultado = Integer.parseInt(operando1) + Integer.parseInt(operando2);
             this.pilaOperandos.push(String.valueOf(resultado));
         } catch (Exception ex) {
             this.codigoIntermedio += "Sumar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
             this.pilaOperandos.push("resultado" + this.contadorGeneral);
-            this.codigoIntermedio = reemplazar(";/Var",
-                    "resultado" + this.contadorGeneral + " dw ?\n;/Var");
-        }
+            //this.codigoIntermedio = reemplazar(";/Var",
+                    //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        }*/
 
         // sin folding
-        /*this.codigoIntermedio += "Sumar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+        this.codigoIntermedio += "Sumar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
         this.pilaOperandos.push("resultado" + this.contadorGeneral);
-        this.codigoIntermedio = reemplazar(";/Var",
-                "resultado" + this.contadorGeneral + " dw ?\n;/Var");*/
+        //this.codigoIntermedio = reemplazar(";/Var",
+                //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
     }
 
     private void operacionResta() {
@@ -894,21 +894,21 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         String operando1 = this.pilaOperandos.pop();
 
         // folding
-        try {
+        /*try {
             int resultado = Integer.parseInt(operando1) - Integer.parseInt(operando2);
             this.pilaOperandos.push(String.valueOf(resultado));
         } catch (Exception ex) {
             this.codigoIntermedio += "Restar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
             this.pilaOperandos.push("resultado" + this.contadorGeneral);
-            this.codigoIntermedio = reemplazar(";/Var",
-                    "resultado" + this.contadorGeneral + " dw ?\n;/Var");
-        }
+            //this.codigoIntermedio = reemplazar(";/Var",
+                    //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        }*/
 
         // sin folding
-        /*this.codigoIntermedio += "Sumar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+        this.codigoIntermedio += "Restar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
         this.pilaOperandos.push("resultado" + this.contadorGeneral);
-        this.codigoIntermedio = reemplazar(";/Var",
-                "resultado" + this.contadorGeneral + " dw ?\n;/Var");*/
+        //this.codigoIntermedio = reemplazar(";/Var",
+                //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
     }
 
     private void operacionMultiplicacion() {
@@ -916,7 +916,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         String operando1 = this.pilaOperandos.pop();
 
         // strength reduction
-        try {
+        /*try {
             int numSumas = Integer.parseInt(operando2);
 
             for (int i = 1; i <= numSumas - 1; i++) {
@@ -934,17 +934,17 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
             }
 
         } catch (Exception ex) {
-            this.codigoIntermedio += "Restar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+            //this.codigoIntermedio += "Multiplicar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
             this.pilaOperandos.push("resultado" + this.contadorGeneral);
             this.codigoIntermedio = reemplazar(";/Var",
-                    "resultado" + this.contadorGeneral + " dw ?\n;/Var");
-        }
+                    //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        }*/
 
         // sin strength reduction
-        /*this.codigoIntermedio += "Restar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+        this.codigoIntermedio += "Multiplicar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
         this.pilaOperandos.push("resultado" + this.contadorGeneral);
-        this.codigoIntermedio = reemplazar(";/Var",
-                "resultado" + this.contadorGeneral + " dw ?\n;/Var");*/
+        //this.codigoIntermedio = reemplazar(";/Var",
+                //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
     }
 
     private void operacionDivision() {
@@ -952,7 +952,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         String operando1 = this.pilaOperandos.pop();
 
         // folding
-        try {
+        /*try {
             if (Integer.parseInt(operando1) % Integer.parseInt(operando2) == 0) {
                 int resultado = Integer.parseInt(operando1) / Integer.parseInt(operando2);
                 this.pilaOperandos.push(String.valueOf(resultado));
@@ -962,15 +962,15 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         } catch (Exception ex) {
             this.codigoIntermedio += "Dividir " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
             this.pilaOperandos.push("resultado" + this.contadorGeneral);
-            this.codigoIntermedio = reemplazar(";/Var",
-                    "resultado" + this.contadorGeneral + " dw ?\n;/Var");
-        }
+            //this.codigoIntermedio = reemplazar(";/Var",
+                    //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        }*/
 
         // sin folding
-        /*this.codigoIntermedio += "Dividir " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+        this.codigoIntermedio += "Dividir " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
         this.pilaOperandos.push("resultado" + this.contadorGeneral);
-        this.codigoIntermedio = reemplazar(";/Var",
-                "resultado" + this.contadorGeneral + " dw ?\n;/Var");*/
+        //this.codigoIntermedio = reemplazar(";/Var",
+                //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
     }
 
     private void comparacionIgualQue() {
@@ -979,8 +979,8 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
 
         this.codigoIntermedio += "IgualQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
         this.pilaOperandos.push("resultado" + this.contadorGeneral);
-        this.codigoIntermedio = reemplazar(";/Var",
-                "resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        //this.codigoIntermedio = reemplazar(";/Var",
+                //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
     }
 
     private void comparacionDistintoQue() {
@@ -989,8 +989,8 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
 
         this.codigoIntermedio += "DistintoQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
         this.pilaOperandos.push("resultado" + this.contadorGeneral);
-        this.codigoIntermedio = reemplazar(";/Var",
-                "resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        //this.codigoIntermedio = reemplazar(";/Var",
+                //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
     }
 
     private void comparacionMayorQue() {
@@ -999,8 +999,8 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
 
         this.codigoIntermedio += "MayorQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
         this.pilaOperandos.push("resultado" + this.contadorGeneral);
-        this.codigoIntermedio = reemplazar(";/Var",
-                "resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        //this.codigoIntermedio = reemplazar(";/Var",
+                //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
     }
 
     private void comparacionMayorIgualQue() {
@@ -1009,8 +1009,8 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
 
         this.codigoIntermedio += "MayorIgualQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
         this.pilaOperandos.push("resultado" + this.contadorGeneral);
-        this.codigoIntermedio = reemplazar(";/Var",
-                "resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        //this.codigoIntermedio = reemplazar(";/Var",
+                //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
     }
 
     private void comparacionMenorQue() {
@@ -1019,8 +1019,8 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
 
         this.codigoIntermedio += "MenorQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
         this.pilaOperandos.push("resultado" + this.contadorGeneral);
-        this.codigoIntermedio = reemplazar(";/Var",
-                "resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        //this.codigoIntermedio = reemplazar(";/Var",
+                //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
     }
 
     private void comparacionMenorIgualQue() {
@@ -1029,8 +1029,8 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
 
         this.codigoIntermedio += "MenorIgualQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
         this.pilaOperandos.push("resultado" + this.contadorGeneral);
-        this.codigoIntermedio = reemplazar(";/Var",
-                "resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        //this.codigoIntermedio = reemplazar(";/Var",
+                //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
     }
 
     // Generar archivo ensamblador resultante

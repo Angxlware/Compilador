@@ -1,13 +1,13 @@
 ALGORITMO HOLA() ES
 
-a: ENTERO;
+a: DECIMAL;
 b: ENTERO;
 c: CADENA;
 e: LOGICO
 
 INICIO
 
-    a := 15 / 3 + 15 + b;
+    a := 15 / 3 + 2 + b;
     b := b * 5;
     c := '15WASD';
     e := VERDADERO;
