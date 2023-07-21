@@ -37,9 +37,9 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
     private String lexemaAuxiliar;
     private String lexemaActual = "";
     private String nombrePrograma;
-    private String textoEnsamblador = "";
+    private String codigoIntermedio = "";
     private String operadorActual = "";
-    private final Stack<String> pilaPolish = new Stack<>();
+    private final Stack<String> pilaOperandos = new Stack<>();
     private final Stack<String> pilaVariablesStrings = new Stack<>();
     private final Stack<String> pilaVariablesCadenas = new Stack<>();
     private int tipoActual, contadorIf, contadorWhile, contadorGeneral, contadorCadenas = 1;
@@ -117,7 +117,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
                                         imprimirListaVariables();
                                         inicializar();
                                         imprimirListaPolish();
-                                        generarCodigoEnsamblador();
+                                        generarCodigoIntermedio();
 
                                         if (colaLexemas.token == 214) //FIN
                                             break;
@@ -170,7 +170,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
                 entradaPila(colaLexemas.token, colaLexemas.lexema);
                 colaLexemas = colaLexemas.sig;
                 leer();
-                generarCodigoIntermedio();
+                generarPolishFinal();
                 if (colaLexemas.token == 118) {//;
                     colaLexemas = colaLexemas.sig;
                     inicializar();
@@ -180,7 +180,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
                 entradaPila(colaLexemas.token, colaLexemas.lexema);
                 colaLexemas = colaLexemas.sig;
                 escribir();
-                generarCodigoIntermedio();
+                generarPolishFinal();
                 if (colaLexemas.token == 118) {
                     colaLexemas = colaLexemas.sig;
                     inicializar();
@@ -268,7 +268,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
             colaLexemas = colaLexemas.sig;
             expresionNumerica1();
             convertirInfijoPostfijo();
-            generarCodigoIntermedio();
+            generarPolishFinal();
             if (colaLexemas.token == 118) {// ;
                 colaLexemas = colaLexemas.sig;
                 inicializar();
@@ -282,7 +282,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         expresionLogica1();
         convertirInfijoPostfijo();
         insertarListaPolish("D" + (++contadorWhile), 0);
-        generarCodigoIntermedio();
+        generarPolishFinal();
         insertarListaPolish("Brf C" + (contadorWhile), 0);
         if (colaLexemas.token == 210) { // HACER
             colaLexemas = colaLexemas.sig;
@@ -303,7 +303,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         lexemaActual = colaLexemas.lexema;
         expresionLogica1();
         convertirInfijoPostfijo();
-        generarCodigoIntermedio();
+        generarPolishFinal();
         insertarListaPolish("Brf A" + (++contadorIf), 0);
         if (colaLexemas.token == 206) {// ENTONCES
             colaLexemas = colaLexemas.sig;
@@ -654,7 +654,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
     }
 
     // Método para generar el código intermedio
-    private void generarCodigoIntermedio() {
+    private void generarPolishFinal() {
         pilaTokensInvertidos.push(115); // Agregar el token ')' a la pila invertida
         pilaLexemasInvertidos.push(")");
 
@@ -706,7 +706,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
 
     // Reemplaza una cadena en el texto ensamblador
     private String reemplazar(String buscar, String reemplazar) {
-        return textoEnsamblador.replaceAll(buscar, reemplazar);
+        return codigoIntermedio.replaceAll(buscar, reemplazar);
     }
 
     // Buscar cadenas en la lista polish y apilarlas
@@ -751,27 +751,17 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         return lexemaEncontrado;
     }
 
-    private void operacionLogicaAritmeticaASM(String opMacro) {
-        String op2 = this.pilaPolish.pop();
-        String op1 = this.pilaPolish.pop();
-
-        this.textoEnsamblador += opMacro + " " + op1 + ", " + op2 + ", resultado" + this.contadorGeneral + "\n";
-        this.pilaPolish.push("resultado" + this.contadorGeneral);
-        this.textoEnsamblador = reemplazar(";/Var",
-                "resultado" + this.contadorGeneral + " dw ?\n;/Var");
-    }
-
     private void operacionAsignacionASM() {
-        String op2 = pilaPolish.pop();
-        String op1 = pilaPolish.pop();
+        String op2 = pilaOperandos.pop();
+        String op1 = pilaOperandos.pop();
 
         if (existeVariableString(op1))
-            textoEnsamblador = reemplazar(op1 + ";/auxiliar ", "\n" + op1 + " db " + op2);
+            codigoIntermedio = reemplazar(op1 + ";/auxiliar ", "\n" + op1 + " db " + op2);
         else
-            textoEnsamblador += "Asignar" + " " + op1 + ", " + op2 + "\n";
+            codigoIntermedio += "Asignar" + " " + op1 + ", " + op2 + "\n";
 
-        textoEnsamblador = this.reemplazar("VERDADERO", "1");
-        textoEnsamblador = this.reemplazar("FALSO", "0");
+        codigoIntermedio = this.reemplazar("VERDADERO", "1");
+        codigoIntermedio = this.reemplazar("FALSO", "0");
     }
 
     private boolean existeVariableString(String variable) {
@@ -783,60 +773,52 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
     }
 
     private void operacionLecturaASM() {
-        String op = pilaPolish.pop();
+        String op = pilaOperandos.pop();
 
         if (existeVariableString(op))
-            textoEnsamblador += "LeerCadena" + " " + op + "\n";
+            codigoIntermedio += "LeerCadena" + " " + op + "\n";
         else
-            textoEnsamblador += "LeerNumero" + " " + op + "\n";
+            codigoIntermedio += "LeerNumero" + " " + op + "\n";
     }
 
     private void operacionEscrituraASM() {
-        String op = pilaPolish.pop();
+        String op = pilaOperandos.pop();
 
         if (existeVariableString(op) && !op.startsWith("'"))
-            textoEnsamblador += "EscribirCadena" + " " + op + "\n";
+            codigoIntermedio += "EscribirCadena" + " " + op + "\n";
         else if (!existeVariableString(op) && !op.startsWith("'"))
-            textoEnsamblador += "EscribirNumero" + " " + op + "\n";
+            codigoIntermedio += "EscribirNumero" + " " + op + "\n";
         else
-            textoEnsamblador += "EscribirCadena" + " cadena" + (contadorCadenas++) + "\n";
+            codigoIntermedio += "EscribirCadena" + " cadena" + (contadorCadenas++) + "\n";
     }
 
     private void etiquetasSaltos() {
         if (operadorActual.startsWith("Brf")) {
             String p = operadorActual.substring(4, 6);
-            textoEnsamblador += "JF" + " Resultado" + (contadorGeneral - 1) + ", " + p + "\n";
+            codigoIntermedio += "JF" + " Resultado" + (contadorGeneral - 1) + ", " + p + "\n";
         } else if (operadorActual.startsWith("Bri")) {
             String p = operadorActual.substring(4, 6);
-            textoEnsamblador += "JMP" + " " + p + "\n";
+            codigoIntermedio += "JMP" + " " + p + "\n";
         } else if (operadorActual.startsWith("A") || operadorActual.startsWith("B")
                 || operadorActual.startsWith("C") || operadorActual.startsWith("D")) {
             String p = operadorActual.substring(0, 2);
-            textoEnsamblador += p + ":\n";
+            codigoIntermedio += p + ":\n";
         }
 
         contadorGeneral++;
     }
 
-    // Generar codigo ensamblador
-    private void generarCodigoEnsamblador() {
-        // cabecera
-        textoEnsamblador = """
-                INCLUDE macros.MAC
-                .MODEL SMALL
-                .STACK 100h
-                .DATA
-                """;
-
+    // Generar codigo intermedio
+    private void generarCodigoIntermedio() {
         this.p_var = this.cab_var;
         this.buscarCadenas();
 
         while (p_var != null) {
             if (p_var.token == 103) { // cadena o string
-                textoEnsamblador += p_var.lexema + " db " + buscarLexema(p_var.lexema) + ", 13,10,'$'\n";
+                codigoIntermedio += p_var.lexema + " db " + buscarLexema(p_var.lexema) + ", 13,10,'$'\n";
                 pilaVariablesStrings.push(p_var.lexema);
             } else {    // numerica
-                textoEnsamblador += p_var.lexema + " dw ?\n";
+                codigoIntermedio += p_var.lexema + " dw ?\n";
             }
             p_var = p_var.sig;
         }
@@ -844,23 +826,11 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         int contadorCadenas = 1;
 
         for (String pilaVariablesCadena : pilaVariablesCadenas) {
-            textoEnsamblador += "cadena" + (contadorCadenas++) + " db " + pilaVariablesCadena + ", 13, 10, '$'\n";
+            codigoIntermedio += "cadena" + (contadorCadenas++) + " db " + pilaVariablesCadena + ", 13, 10, '$'\n";
         }
 
-        this.textoEnsamblador += """
-                impresion db ?
+        this.codigoIntermedio += """
                 ;/Var
-                
-                .CODE
-                MOV AX, @DATA
-                MOV DS, AX
-       
-                CALL METODOS
-                
-                MOV AX,4C00H
-                INT 21H
-                
-                METODOS PROC
                 """;
 
         colaPolish = cabeceraPolish;
@@ -871,40 +841,196 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
                 operadorActual = colaPolish.lexema;
 
                 switch (operadorActual) { // nombres de las macros
-                    case "+" -> operacionLogicaAritmeticaASM("Sumar");
-                    case "-" -> operacionLogicaAritmeticaASM("Restar");
-                    case "*" -> operacionLogicaAritmeticaASM("Multiplicar");
-                    case "/" -> operacionLogicaAritmeticaASM("Dividir");
+                    case "+" -> operacionSuma();
+                    case "-" -> operacionResta();
+                    case "*" -> operacionMultiplicacion();
+                    case "/" -> operacionDivision();
                     case ":=" -> operacionAsignacionASM();
                     case "LEER" -> operacionLecturaASM();
                     case "ESCRIBIR" -> operacionEscrituraASM();
-                    case "=" -> operacionLogicaAritmeticaASM("IgualQue");
-                    case ">" -> operacionLogicaAritmeticaASM("MayorQue");
-                    case "<" -> operacionLogicaAritmeticaASM("MenorQue");
-                    case ">=" -> operacionLogicaAritmeticaASM("MayorIgualQue");
-                    case "<=" -> operacionLogicaAritmeticaASM("MenorIgualQue");
-                    case "<>" -> operacionLogicaAritmeticaASM("DiferenteQue");
+                    case "=" -> comparacionIgualQue();
+                    case ">" -> comparacionMayorQue();
+                    case "<" -> comparacionMenorQue();
+                    case ">=" -> comparacionMayorIgualQue();
+                    case "<=" -> comparacionMenorIgualQue();
+                    case "<>" -> comparacionDistintoQue();
                 }
                 etiquetasSaltos();
             } else {
-                pilaPolish.push(colaPolish.lexema);
+                pilaOperandos.push(colaPolish.lexema);
             }
 
             colaPolish = colaPolish.sig;
         }
 
-        // pie de pagina
-        textoEnsamblador += """
-                    RET
-                    METODOS ENDP
-                    
-                    END""";
+        System.out.println("\n<<< CODIGO INTERMEDIO OPTIMIZADO >>>");
+        System.out.println(codigoIntermedio);
+    }
 
-        System.out.println("\n<<< CODIGO ENSAMBLADOR >>>");
-        System.out.println(textoEnsamblador);
+    private void operacionSuma() {
+        String operando2 = this.pilaOperandos.pop();
+        String operando1 = this.pilaOperandos.pop();
 
-        //this.generarArchivoEnsamblador();
-        //this.compilarYEjecutar();
+        // folding
+        try {
+            int resultado = Integer.parseInt(operando1) + Integer.parseInt(operando2);
+            this.pilaOperandos.push(String.valueOf(resultado));
+        } catch (Exception ex) {
+            this.codigoIntermedio += "Sumar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+            this.pilaOperandos.push("resultado" + this.contadorGeneral);
+            this.codigoIntermedio = reemplazar(";/Var",
+                    "resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        }
+
+        // sin folding
+        /*this.codigoIntermedio += "Sumar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+        this.pilaOperandos.push("resultado" + this.contadorGeneral);
+        this.codigoIntermedio = reemplazar(";/Var",
+                "resultado" + this.contadorGeneral + " dw ?\n;/Var");*/
+    }
+
+    private void operacionResta() {
+        String operando2 = this.pilaOperandos.pop();
+        String operando1 = this.pilaOperandos.pop();
+
+        // folding
+        try {
+            int resultado = Integer.parseInt(operando1) - Integer.parseInt(operando2);
+            this.pilaOperandos.push(String.valueOf(resultado));
+        } catch (Exception ex) {
+            this.codigoIntermedio += "Restar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+            this.pilaOperandos.push("resultado" + this.contadorGeneral);
+            this.codigoIntermedio = reemplazar(";/Var",
+                    "resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        }
+
+        // sin folding
+        /*this.codigoIntermedio += "Sumar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+        this.pilaOperandos.push("resultado" + this.contadorGeneral);
+        this.codigoIntermedio = reemplazar(";/Var",
+                "resultado" + this.contadorGeneral + " dw ?\n;/Var");*/
+    }
+
+    private void operacionMultiplicacion() {
+        String operando2 = this.pilaOperandos.pop();
+        String operando1 = this.pilaOperandos.pop();
+
+        // strength reduction
+        try {
+            int numSumas = Integer.parseInt(operando2);
+
+            for (int i = 1; i <= numSumas - 1; i++) {
+                NodoVar aux = colaPolish.sig;
+                NodoVar nuevo = new NodoVar("+", 104);
+                nuevo.sig = aux;
+                colaPolish.sig = nuevo;
+            }
+
+            for (int i = 1; i <= numSumas; i++) {
+                NodoVar aux = colaPolish.sig;
+                NodoVar nuevo = new NodoVar(operando1, 101);
+                nuevo.sig = aux;
+                colaPolish.sig = nuevo;
+            }
+
+        } catch (Exception ex) {
+            this.codigoIntermedio += "Restar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+            this.pilaOperandos.push("resultado" + this.contadorGeneral);
+            this.codigoIntermedio = reemplazar(";/Var",
+                    "resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        }
+
+        // sin strength reduction
+        /*this.codigoIntermedio += "Restar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+        this.pilaOperandos.push("resultado" + this.contadorGeneral);
+        this.codigoIntermedio = reemplazar(";/Var",
+                "resultado" + this.contadorGeneral + " dw ?\n;/Var");*/
+    }
+
+    private void operacionDivision() {
+        String operando2 = this.pilaOperandos.pop();
+        String operando1 = this.pilaOperandos.pop();
+
+        // folding
+        try {
+            if (Integer.parseInt(operando1) % Integer.parseInt(operando2) == 0) {
+                int resultado = Integer.parseInt(operando1) / Integer.parseInt(operando2);
+                this.pilaOperandos.push(String.valueOf(resultado));
+            } else
+                throw new Exception();
+
+        } catch (Exception ex) {
+            this.codigoIntermedio += "Dividir " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+            this.pilaOperandos.push("resultado" + this.contadorGeneral);
+            this.codigoIntermedio = reemplazar(";/Var",
+                    "resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        }
+
+        // sin folding
+        /*this.codigoIntermedio += "Dividir " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+        this.pilaOperandos.push("resultado" + this.contadorGeneral);
+        this.codigoIntermedio = reemplazar(";/Var",
+                "resultado" + this.contadorGeneral + " dw ?\n;/Var");*/
+    }
+
+    private void comparacionIgualQue() {
+        String operando2 = this.pilaOperandos.pop();
+        String operando1 = this.pilaOperandos.pop();
+
+        this.codigoIntermedio += "IgualQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+        this.pilaOperandos.push("resultado" + this.contadorGeneral);
+        this.codigoIntermedio = reemplazar(";/Var",
+                "resultado" + this.contadorGeneral + " dw ?\n;/Var");
+    }
+
+    private void comparacionDistintoQue() {
+        String operando2 = this.pilaOperandos.pop();
+        String operando1 = this.pilaOperandos.pop();
+
+        this.codigoIntermedio += "DistintoQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+        this.pilaOperandos.push("resultado" + this.contadorGeneral);
+        this.codigoIntermedio = reemplazar(";/Var",
+                "resultado" + this.contadorGeneral + " dw ?\n;/Var");
+    }
+
+    private void comparacionMayorQue() {
+        String operando2 = this.pilaOperandos.pop();
+        String operando1 = this.pilaOperandos.pop();
+
+        this.codigoIntermedio += "MayorQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+        this.pilaOperandos.push("resultado" + this.contadorGeneral);
+        this.codigoIntermedio = reemplazar(";/Var",
+                "resultado" + this.contadorGeneral + " dw ?\n;/Var");
+    }
+
+    private void comparacionMayorIgualQue() {
+        String operando2 = this.pilaOperandos.pop();
+        String operando1 = this.pilaOperandos.pop();
+
+        this.codigoIntermedio += "MayorIgualQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+        this.pilaOperandos.push("resultado" + this.contadorGeneral);
+        this.codigoIntermedio = reemplazar(";/Var",
+                "resultado" + this.contadorGeneral + " dw ?\n;/Var");
+    }
+
+    private void comparacionMenorQue() {
+        String operando2 = this.pilaOperandos.pop();
+        String operando1 = this.pilaOperandos.pop();
+
+        this.codigoIntermedio += "MenorQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+        this.pilaOperandos.push("resultado" + this.contadorGeneral);
+        this.codigoIntermedio = reemplazar(";/Var",
+                "resultado" + this.contadorGeneral + " dw ?\n;/Var");
+    }
+
+    private void comparacionMenorIgualQue() {
+        String operando2 = this.pilaOperandos.pop();
+        String operando1 = this.pilaOperandos.pop();
+
+        this.codigoIntermedio += "MenorIgualQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
+        this.pilaOperandos.push("resultado" + this.contadorGeneral);
+        this.codigoIntermedio = reemplazar(";/Var",
+                "resultado" + this.contadorGeneral + " dw ?\n;/Var");
     }
 
     // Generar archivo ensamblador resultante
@@ -916,7 +1042,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
             File archivo = new File(direccionArchivo);  // crear archivo
             BufferedWriter bw = new BufferedWriter(new FileWriter(archivo));
 
-            bw.write(textoEnsamblador);                 // escribir codigo en el archivo
+            bw.write(codigoIntermedio);                 // escribir codigo en el archivo
             bw.close();
 
             System.out.println("\nCodigo intermedio generado en: " + direccionArchivo + "\n");
