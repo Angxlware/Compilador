@@ -1,27 +1,24 @@
 ALGORITMO HOLA() ES
 
-a: DECIMAL;
+a: ENTERO;
 b: ENTERO;
-c: CADENA;
-e: LOGICO
+c: CADENA
 
 INICIO
 
-    a := 15 / 3 + 2 + b;
-    b := b * 5;
-    c := '15WASD';
-    e := VERDADERO;
+    a := 1998;
+    b := 1999;
+    c := 'Hola!!!';
 
     SI (a = b) ENTONCES
-        SI (a <> 1999) ENTONCES
-            LEER b;
-            ESCRIBIR b
+            SI (a <> 1999) ENTONCES
+                LEER b;
+                ESCRIBIR b
+            SINO
+                LEER c;
+                ESCRIBIR c
+            FIN_SI
         SINO
-            LEER c;
-            ESCRIBIR c
+            ESCRIBIR 'hola mundo!'
         FIN_SI
-    SINO
-        ESCRIBIR b
-    FIN_SI
-
 FIN

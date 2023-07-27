@@ -25,10 +25,10 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
             {"Se esperaba algo que Escribir", "601"}
     };
     private static final String[][] ERRORES_SEMANTICOS = {
-            {"El nombre de la variable es igual al ID", "517"},
-            {"Variable Multideclarada", "518"},
+            {"El nombre de la variable es igual al nombre del programa", "517"},
+            {"Variable multideclarada", "518"},
             {"Variable sin declarar", "519"},
-            {"Incompatibilidad de datos", "520"}
+            {"Incompatibilidad de tipos", "520"}
     };
 
     private Nodo colaLexemas, auxiliarLexemas, listaErrores, cabezaLista;
@@ -37,12 +37,12 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
     private String lexemaAuxiliar;
     private String lexemaActual = "";
     private String nombrePrograma;
-    private String codigoIntermedio = "";
+    private String codigoIntermedio = "", codigoEnsamblador = "";
     private String operadorActual = "";
     private final Stack<String> pilaOperandos = new Stack<>();
     private final Stack<String> pilaVariablesStrings = new Stack<>();
     private final Stack<String> pilaVariablesCadenas = new Stack<>();
-    private int tipoActual, contadorIf, contadorWhile, contadorGeneral, contadorCadenas = 1;
+    private int tipoActual, contadorIf, contadorWhile, contadorCadenas = 1;
     private final Stack<Integer> pilaTokens = new Stack<>();
 
     private void Error(int linea) {
@@ -60,18 +60,20 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
     private void errorSemantico(int num_error) {
         for (String[] errores : ERRORES_SEMANTICOS) {
             if (num_error == Integer.parseInt(errores[1])) {
-                if (auxiliarLexemas != null) {
+                if (auxiliarLexemas != null)
                     Error(auxiliarLexemas.renglon);
-                }
-                System.out.println("Error: " + errores[0] + " (" + lexemaActual + ") " + ", Numero de error: "
-                        + num_error + " , " + "En la línea: " + " " + colaLexemas.renglon);
-                lexemaActual = "";
+
+                System.out.println("\u001B[31m\n" + "[ ERROR SEMÁNTICO " + num_error + " ]" + "\u001B[39m");
+                System.out.println(errores[0] + " en la línea " + colaLexemas.renglon);
             }
         }
-        errorEncontrado = true;
+
+        System.out.println("\u001B[31m\n" + "[ PROGRAMA FINALIZADO ]" + "\u001B[39m");
+        System.out.println("El programa ha finalizado debido a un error de carácter semántico");
+        System.exit(1);
     }
 
-    private void mostrarError(int num_error) {
+    private void errorSintactico(int num_error) {
         for (String[] errores : ERRORES_SINTACTICOS) {
             if (num_error == Integer.parseInt(errores[1])) {
                 Nodo Nodo = new Nodo(errores[0], num_error, colaLexemas.renglon);
@@ -84,11 +86,14 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
                     listaErrores     = Nodo;
                 }
 
-                System.out.println("Error: " + errores[0] + ", Numero de error: "
-                        + num_error + " En la línea: " + " " + colaLexemas.renglon);
+                System.out.println("\u001B[31m\n" + "[ ERROR SINTÁCTICO " + num_error + " ]" + "\u001B[39m");
+                System.out.println(errores[0] + " en la línea " + colaLexemas.renglon);
             }
         }
-        errorEncontrado = true;
+
+        System.out.println("\u001B[31m\n" + "[ PROGRAMA FINALIZADO ]" + "\u001B[39m");
+        System.out.println("El programa ha finalizado debido a un error de carácter sintáctico");
+        System.exit(1);
     }
 
     public AnalizadorSintactico(Nodo cabezaLista) {
@@ -118,35 +123,36 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
                                         inicializar();
                                         imprimirListaPolish();
                                         generarCodigoIntermedio();
+                                        generarCodigoEnsamblador();
 
                                         if (colaLexemas.token == 214) //FIN
                                             break;
                                         else {
-                                            mostrarError(509);
+                                            errorSintactico(509);
                                             break;
                                         }
                                     } else {
-                                        mostrarError(508);
+                                        errorSintactico(508);
                                         break;
                                     }
                                 } else {
-                                    mostrarError(510);
+                                    errorSintactico(510);
                                     break;
                                 }
                             } else {
-                                mostrarError(507);
+                                errorSintactico(507);
                                 break;
                             }
                         } else {
-                            mostrarError(506);
+                            errorSintactico(506);
                             break;
                         }
                     } else {
-                        mostrarError(505);
+                        errorSintactico(505);
                         break;
                     }
                 } else {
-                    mostrarError(504);
+                    errorSintactico(504);
                     break;
                 }
             }
@@ -210,42 +216,50 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
     
      // cambios 
     private void escribir() {
-        boolean cadena = false;
         if (colaLexemas.token == 116) { // ,
             entradaPila(colaLexemas.token, colaLexemas.lexema);
+
             colaLexemas = colaLexemas.sig;
-            if (colaLexemas.token == 118) {
+
+            if (colaLexemas.token == 118) { // ;
                 colaLexemas = colaLexemas.sig;
                 escribir();
             }
         }
+
         if (colaLexemas.token == 103) { // CADENA o string
-            cadena = true;
             entradaPila(colaLexemas.token, colaLexemas.lexema);
+
             colaLexemas = colaLexemas.sig;
+
             if (colaLexemas.token == 116) { // ,
                 entradaPila(colaLexemas.token, colaLexemas.lexema);
+
                 colaLexemas = colaLexemas.sig;
-                if (colaLexemas.token == 118) /* ;*/ {
+
+                if (colaLexemas.token == 118) { // ;
                     colaLexemas = colaLexemas.sig;
                     escribir();
                 }
             }
-            if (colaLexemas.token == 118) {
+
+            if (colaLexemas.token == 118) { // ;
                 colaLexemas = colaLexemas.sig;
                 escribir();
             }
         }
-        if (colaLexemas.token == 100) { // Variable
+
+        if (colaLexemas.token == 100) { // variable
             entradaPila(colaLexemas.token, colaLexemas.lexema);
+
             variableSinDeclarar();
+
             colaLexemas = colaLexemas.sig;
-            if (colaLexemas.token == 116) {
+
+            if (colaLexemas.token == 116) { // ,
                 colaLexemas = colaLexemas.sig;
                 escribir();
             }
-        } else if (!cadena) {
-            mostrarError(601);
         }
     }
 
@@ -274,7 +288,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
                 inicializar();
             }
         } else {
-            mostrarError(600);
+            errorSintactico(600);
         }
     }
 
@@ -293,7 +307,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
                 --contadorWhile;
                 colaLexemas = colaLexemas.sig;
             } else {
-                mostrarError(516);
+                errorSintactico(516);
             }
         }
     }
@@ -322,10 +336,10 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
                 --contadorIf;
                 colaLexemas = colaLexemas.sig;
             } else {
-                mostrarError(511);
+                errorSintactico(511);
             }
         } else {
-            mostrarError(513);
+            errorSintactico(513);
         }
     }
 
@@ -372,7 +386,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
             colaLexemas = colaLexemas.sig;
             expresionNumerica1();
         } else {
-            mostrarError(512);
+            errorSintactico(512);
         }
     }
 
@@ -449,27 +463,29 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
 
     private void declaracionVariables() {
         if (colaLexemas.token == 100) { // variable
-            if (colaLexemas.lexema.equals(nombrePrograma)) {
+            if (colaLexemas.lexema.equalsIgnoreCase(nombrePrograma)) {
                 errorSemantico(517);
             } else {
                 variableMultideclarada();
                 lexemaAuxiliar = colaLexemas.lexema;
             }
+
             colaLexemas = colaLexemas.sig;
+
             if (colaLexemas.token == 117) {// :
                 colaLexemas = colaLexemas.sig;
                 nombreTipoSimple();
-                Insertar_Variables(lexemaAuxiliar, tipoActual);
+                insertarVariable(lexemaAuxiliar, tipoActual);
 
                 if (colaLexemas.token == 118) {// ;
                     colaLexemas = colaLexemas.sig;
                     declaracionVariables();
                 }
             } else {
-                mostrarError(515);
+                errorSintactico(515);
             }
         } else {
-            mostrarError(515);
+            errorSintactico(515);
         }
     }
 
@@ -494,7 +510,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
                 tipoActual = colaLexemas.token;
                 colaLexemas = colaLexemas.sig;
             }
-            default -> mostrarError(514);
+            default -> errorSintactico(514);
         }
     }
 
@@ -795,7 +811,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
     private void etiquetasSaltos() {
         if (operadorActual.startsWith("Brf")) {
             String p = operadorActual.substring(4, 6);
-            codigoIntermedio += "JF" + " Resultado" + (contadorGeneral - 1) + ", " + p + "\n";
+            codigoIntermedio += "JF" + " resultadoAux" + ", " + p + "\n";
         } else if (operadorActual.startsWith("Bri")) {
             String p = operadorActual.substring(4, 6);
             codigoIntermedio += "JMP" + " " + p + "\n";
@@ -804,8 +820,6 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
             String p = operadorActual.substring(0, 2);
             codigoIntermedio += p + ":\n";
         }
-
-        contadorGeneral++;
     }
 
     // Generar codigo intermedio
@@ -813,12 +827,14 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         this.p_var = this.cab_var;
         this.buscarCadenas();
 
+        codigoIntermedio += "resultadoAux dw 0\n";
+
         while (p_var != null) {
             if (p_var.token == 103) { // cadena o string
-                codigoIntermedio += p_var.lexema + " db " + buscarLexema(p_var.lexema) + ", 13,10,'$'\n";
+                codigoIntermedio += p_var.lexema + " db " + buscarLexema(p_var.lexema) + ", 13, 10,'$'\n";
                 pilaVariablesStrings.push(p_var.lexema);
             } else {    // numerica
-                codigoIntermedio += p_var.lexema + " dw ?\n";
+                codigoIntermedio += p_var.lexema + " dw 0\n";
             }
             p_var = p_var.sig;
         }
@@ -863,7 +879,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
             colaPolish = colaPolish.sig;
         }
 
-        System.out.println("\n<<< CODIGO INTERMEDIO OPTIMIZADO >>>");
+        System.out.println("\u001B[36m" + "\n[ CÓDIGO INTERMEDIO OPTIMIZADO ]" + "\u001B[39m");
         System.out.println(codigoIntermedio);
     }
 
@@ -883,8 +899,8 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         }*/
 
         // sin folding
-        this.codigoIntermedio += "Sumar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
-        this.pilaOperandos.push("resultado" + this.contadorGeneral);
+        this.codigoIntermedio += "Sumar " + operando1 + ", " + operando2 + ", resultadoAux\n";
+        this.pilaOperandos.push("resultadoAux");
         //this.codigoIntermedio = reemplazar(";/Var",
                 //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
     }
@@ -905,8 +921,8 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         }*/
 
         // sin folding
-        this.codigoIntermedio += "Restar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
-        this.pilaOperandos.push("resultado" + this.contadorGeneral);
+        this.codigoIntermedio += "Restar " + operando1 + ", " + operando2 + ", resultadoAux\n";
+        this.pilaOperandos.push("resultadoAux");
         //this.codigoIntermedio = reemplazar(";/Var",
                 //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
     }
@@ -941,8 +957,8 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         }*/
 
         // sin strength reduction
-        this.codigoIntermedio += "Multiplicar " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
-        this.pilaOperandos.push("resultado" + this.contadorGeneral);
+        this.codigoIntermedio += "Multiplicar " + operando1 + ", " + operando2 + ", resultadoAux\n";
+        this.pilaOperandos.push("resultadoAux");
         //this.codigoIntermedio = reemplazar(";/Var",
                 //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
     }
@@ -967,70 +983,91 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         }*/
 
         // sin folding
-        this.codigoIntermedio += "Dividir " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
-        this.pilaOperandos.push("resultado" + this.contadorGeneral);
-        //this.codigoIntermedio = reemplazar(";/Var",
-                //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        this.codigoIntermedio += "Dividir " + operando1 + ", " + operando2 + ", resultadoAux\n";
+        this.pilaOperandos.push("resultadoAux");
     }
 
     private void comparacionIgualQue() {
         String operando2 = this.pilaOperandos.pop();
         String operando1 = this.pilaOperandos.pop();
 
-        this.codigoIntermedio += "IgualQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
-        this.pilaOperandos.push("resultado" + this.contadorGeneral);
-        //this.codigoIntermedio = reemplazar(";/Var",
-                //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        this.codigoIntermedio += "IgualQue " + operando1 + ", " + operando2 + ", resultadoAux\n";
+        this.pilaOperandos.push("resultadoAux");
     }
 
     private void comparacionDistintoQue() {
         String operando2 = this.pilaOperandos.pop();
         String operando1 = this.pilaOperandos.pop();
 
-        this.codigoIntermedio += "DistintoQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
-        this.pilaOperandos.push("resultado" + this.contadorGeneral);
-        //this.codigoIntermedio = reemplazar(";/Var",
-                //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        this.codigoIntermedio += "DistintoQue " + operando1 + ", " + operando2 + ", resultadoAux\n";
+        this.pilaOperandos.push("resultadoAux");
     }
 
     private void comparacionMayorQue() {
         String operando2 = this.pilaOperandos.pop();
         String operando1 = this.pilaOperandos.pop();
 
-        this.codigoIntermedio += "MayorQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
-        this.pilaOperandos.push("resultado" + this.contadorGeneral);
-        //this.codigoIntermedio = reemplazar(";/Var",
-                //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        this.codigoIntermedio += "MayorQue " + operando1 + ", " + operando2 + ", resultadoAux\n";
+        this.pilaOperandos.push("resultadoAux");
     }
 
     private void comparacionMayorIgualQue() {
         String operando2 = this.pilaOperandos.pop();
         String operando1 = this.pilaOperandos.pop();
 
-        this.codigoIntermedio += "MayorIgualQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
-        this.pilaOperandos.push("resultado" + this.contadorGeneral);
-        //this.codigoIntermedio = reemplazar(";/Var",
-                //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        this.codigoIntermedio += "MayorIgualQue " + operando1 + ", " + operando2 + ", resultadoAux";
+        this.pilaOperandos.push("resultadoAux");
     }
 
     private void comparacionMenorQue() {
         String operando2 = this.pilaOperandos.pop();
         String operando1 = this.pilaOperandos.pop();
 
-        this.codigoIntermedio += "MenorQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
-        this.pilaOperandos.push("resultado" + this.contadorGeneral);
-        //this.codigoIntermedio = reemplazar(";/Var",
-                //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        this.codigoIntermedio += "MenorQue " + operando1 + ", " + operando2 + ", resultadoAux\n";
+        this.pilaOperandos.push("resultadoAux");
     }
 
     private void comparacionMenorIgualQue() {
         String operando2 = this.pilaOperandos.pop();
         String operando1 = this.pilaOperandos.pop();
 
-        this.codigoIntermedio += "MenorIgualQue " + operando1 + ", " + operando2 + ", resultado" + this.contadorGeneral + "\n";
-        this.pilaOperandos.push("resultado" + this.contadorGeneral);
-        //this.codigoIntermedio = reemplazar(";/Var",
-                //"resultado" + this.contadorGeneral + " dw ?\n;/Var");
+        this.codigoIntermedio += "MenorIgualQue " + operando1 + ", " + operando2 + ", resultadoAux\n";
+        this.pilaOperandos.push("resultadoAux");
+    }
+
+    private void generarCodigoEnsamblador() {
+        codigoEnsamblador += """
+                INCLUDE macros.MAC
+                .MODEL SMALL
+                .STACK 100h
+                
+                .DATA
+                """;
+
+        codigoEnsamblador += codigoIntermedio;
+        codigoEnsamblador = codigoEnsamblador.replaceAll(";/Var", """
+                
+                .CODE
+                MOV AX, @DATA
+                MOV DX, AX
+                CALL METODOS
+                MOV AX, 4C00H
+                INT 21H
+                
+                METODOS PROC""");
+
+        codigoEnsamblador += """
+                RET
+                METODOS ENDP
+                
+                END
+                """;
+
+        System.out.println("\u001B[36m" + "[ CÓDIGO ENSAMBLADOR ]" + "\u001B[39m");
+        System.out.println(codigoEnsamblador);
+
+        generarArchivoEnsamblador();
+        compilarYEjecutar();
     }
 
     // Generar archivo ensamblador resultante
@@ -1042,11 +1079,12 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
             File archivo = new File(direccionArchivo);  // crear archivo
             BufferedWriter bw = new BufferedWriter(new FileWriter(archivo));
 
-            bw.write(codigoIntermedio);                 // escribir codigo en el archivo
+            bw.write(codigoEnsamblador);                // escribir codigo en el archivo
             bw.close();
 
-            System.out.println("\nCodigo intermedio generado en: " + direccionArchivo + "\n");
-        } catch (Exception e) {                                                             // error
+            System.out.println("\u001B[36m" + "[ ARCHIVO GENERADO ]" + "\u001B[39m");
+            System.out.println("Archivo ensamblador generado en: " + direccionArchivo);
+        } catch (Exception e) {                         // error
             System.out.println("Ha ocurrido un error al generar el archivo: " + e.getMessage());
         }
     }

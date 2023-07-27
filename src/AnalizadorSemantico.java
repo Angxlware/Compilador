@@ -12,7 +12,7 @@ public class AnalizadorSemantico {
 
     NodoVar p_var, cab_var, cabeceraPolish, colaPolish = null;
 
-    void Insertar_Variables(String lexema, int token) {
+    void insertarVariable(String lexema, int token) {
         NodoVar nodo_variable = new NodoVar(lexema, token);
         if (cab_var == null) {
             cab_var = nodo_variable;
@@ -24,7 +24,7 @@ public class AnalizadorSemantico {
     }
 
     void imprimirListaVariables() {
-        System.out.println("\n<<< VARIABLES DECLARADAS >>>");
+        System.out.println("\u001B[36m" + "\n[ LISTA DE VARIABLES ]" + "\u001B[39m");
         System.out.printf("%-15s %-5s\n", "Nombre", "Tipo");
 
         p_var = cab_var;
@@ -99,14 +99,13 @@ public class AnalizadorSemantico {
     }
 
     public void imprimirListaPolish() {
-        System.out.println("\n<<< LISTA POLISH RESULTANTE >>>");
+        System.out.println("\u001B[36m" + "\n[ LISTA POLACA ]" + "\u001B[39m");
         System.out.printf("%-15s %-3s\n", "Lexema", "Token");
 
         colaPolish = cabeceraPolish;
 
         while (colaPolish != null) {
             System.out.printf("%-15s %-3s\n", colaPolish.lexema, (colaPolish.token != 0) ? colaPolish.token : "");
-
             colaPolish = colaPolish.sig;
         }
     }

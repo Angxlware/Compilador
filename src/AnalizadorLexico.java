@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.LinkedList;
 
 public class AnalizadorLexico {
     // Variables de la clase
@@ -52,9 +53,9 @@ public class AnalizadorLexico {
     };
     private static final String[][] ERRORES_LEXICOS = { // errores lexicos
             //               Mensaje                  Token
-            {"Simbolo no valido"                    , "500"},
+            {"Símbolo no válido"                    , "500"},
             {"Se espera cierre de comentario"       , "501"},
-            {"Se espera un digito despues del punto", "502"},
+            {"Se espera un dígito después del punto", "502"},
             {"Se espera cierre de cadena"           , "503"}
     };
 
@@ -143,11 +144,12 @@ public class AnalizadorLexico {
                     this.lexema = "";
                 } else {
                     ImprimirMensajeError();
-                    break;
+                    this.estado = 0;
+                    this.lexema = "";
                 }
             }
 
-            ImprimirNodos();
+            imprimirNodos();
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
@@ -156,12 +158,17 @@ public class AnalizadorLexico {
     // Imprimir mensaje de error
     private void ImprimirMensajeError() {
         if ((this.caracter != -1) && (this.transicion >= 500)) {
-            for (String[] error : ERRORES_LEXICOS)
-                if (transicion == Integer.parseInt(error[1]))
-                    System.out.println("Error: " + error[0] + " error " + this.transicion + " caracter "
-                            + (char) this.caracter + " en el renglon  " + this.numRenglon);
 
-            this.errorEncontrado = true;
+            for (String[] error : ERRORES_LEXICOS)
+
+                if (transicion == Integer.parseInt(error[1])) {
+                    System.out.println("\u001B[31m\n" + "[ ERROR SEMÁNTICO " + transicion + " ]" + "\u001B[39m");
+                    System.out.println(error[0] + " \"" + (char) this.caracter + "\" en la línea " + this.numRenglon);
+                }
+
+            System.out.println("\u001B[31m\n" + "[ PROGRAMA FINALIZADO ]" + "\u001B[39m");
+            System.out.println("El programa ha finalizado debido a un error de carácter léxico");
+            System.exit(1);
         }
     }
 
@@ -178,13 +185,14 @@ public class AnalizadorLexico {
     }
 
     // Imprimir nodos de la lista
-    public void ImprimirNodos() {
-        System.out.println("<<< TOKENS INGRESADOS >>>");
+    public void imprimirNodos() {
+        System.out.println("\u001B[36m" + "[ TOKENS INGRESADOS ]" + "\u001B[39m");
+        System.out.printf("%-5s %-15s %-5s\n", "Token", "Lexema", "Linea");
 
         this.cola = this.cabeza;
 
         while (this.cola != null) {
-            System.out.printf("%-3d %-15s %-3d\n", cola.token, cola.lexema, cola.renglon);
+            System.out.printf("%-5d %-15s %-5d\n", cola.token, cola.lexema, cola.renglon);
             this.cola = this.cola.sig;
         }
     }
