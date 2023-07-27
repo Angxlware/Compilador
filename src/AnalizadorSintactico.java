@@ -831,7 +831,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
 
         while (p_var != null) {
             if (p_var.token == 103) { // cadena o string
-                codigoIntermedio += p_var.lexema + " db " + buscarLexema(p_var.lexema) + ", 13, 10,'$'\n";
+                codigoIntermedio += p_var.lexema + " db " + buscarLexema(p_var.lexema) + ", 13, 10, '$', 0\n";
                 pilaVariablesStrings.push(p_var.lexema);
             } else {    // numerica
                 codigoIntermedio += p_var.lexema + " dw 0\n";
@@ -842,7 +842,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
         int contadorCadenas = 1;
 
         for (String pilaVariablesCadena : pilaVariablesCadenas) {
-            codigoIntermedio += "cadena" + (contadorCadenas++) + " db " + pilaVariablesCadena + ", 13, 10, '$'\n";
+            codigoIntermedio += "cadena" + (contadorCadenas++) + " db " + pilaVariablesCadena + ", 13, 10, '$', 0\n";
         }
 
         this.codigoIntermedio += """
@@ -1049,7 +1049,7 @@ public class AnalizadorSintactico extends AnalizadorSemantico {
                 
                 .CODE
                 MOV AX, @DATA
-                MOV DX, AX
+                MOV DS, AX
                 CALL METODOS
                 MOV AX, 4C00H
                 INT 21H

@@ -4,8 +4,8 @@
 
 ; op1 := op2
 Asignar MACRO op1, op2
-	MOV AL, op2	; Al = op2
-	MOV op1, AL ; op1 = AL
+	MOV AX, op2 ; Al = op2
+	MOV op1, AX ; op1 = AL
 ENDM
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -18,33 +18,32 @@ ENDM
 
 ; res = op1 + op2
 Sumar MACRO op1, op2, res
-    MOV AL, op1 ; AL = op1
-	ADD AL, op2 ; AL += op2
-	MOV res, AL ; res = AL
+    MOV AX, op1 ; EAX = op1
+	ADD AX, op2 ; EAX += op2
+	MOV res, AX ; res = EAX
 ENDM
 
 ; res = op1 - op2
 Restar MACRO op1, op2, res
-	MOV AL, op1 ; AL = op1
-	SUB AL, op2 ; AL -= op2
-	MOV res, AL ; res = AL
+	MOV AX, op1 ; EAX = op1
+	SUB AX, op2 ; EAX -= op2
+	MOV res, AX ; res = EAX
 ENDM
 
 ; res = op1 * op2
 Multiplicar MACRO op1, op2, res
-	MOV AL, op1
-	MOV BL, op2
-	IMUL BL
-	MOV res, AL
+	MOV AX, op1
+	MOV BX, op2
+	MUL BX
+	MOV res, AX
 ENDM
 
 ; res = op1 / op2
 Dividir	MACRO op1, op2, res
-	MOV DX, 0
-	MOV AL, op1
-	MOV BL, op2
-	IDIV BL
-	MOV res, AL
+	MOV AX, op1
+	MOV BX, op2
+	DIV BX
+	MOV res, AX
 ENDM
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -60,8 +59,8 @@ MenorQue MACRO op1, op2, res
 	LOCAL LABEL1
 	LOCAL SALIR
 
-	MOV AL, op1
-	CMP AL, op2
+	MOV AX, op1
+	CMP AX, op2
 	JGE LABEL1
 	; true
 	MOV res, 1
@@ -77,8 +76,8 @@ MenorIgualQue MACRO op1, op2, res
 	LOCAL LABEL1
 	LOCAL SALIR
 
-	MOV AL, op1
-	CMP AL, op2
+	MOV AX, op1
+	CMP AX, op2
 	JG	LABEL1
 	; true
 	MOV res, 1
@@ -94,8 +93,8 @@ IgualQue MACRO op1, op2, res
 	LOCAL LABEL1
 	LOCAL SALIR
 
-	MOV AL, op1
-	CMP AL, op2
+	MOV AX, op1
+	CMP AX, op2
 	JNE LABEL1
 	; true
 	MOV res, 1
@@ -107,12 +106,12 @@ IgualQue MACRO op1, op2, res
 ENDM
 
 ; res = op1 <> op2
-DiferenteQue MACRO op1, op2, res
+DistintoQue MACRO op1, op2, res
 	LOCAL LABEL1
 	LOCAL SALIR
 
-	MOV AL, op1
-	CMP AL, op2
+	MOV AX, op1
+	CMP AX, op2
 	JE	LABEL1
 	; true
 	MOV res, 1
@@ -128,8 +127,8 @@ MayorQue MACRO op1, op2, res
 	LOCAL LABEL1
 	LOCAL SALIR
 
-	MOV AL, op1
-	CMP AL, op2
+	MOV AX, op1
+	CMP AX, op2
 	JLE	LABEL1
 	; true
 	MOV res, 1
@@ -145,8 +144,8 @@ MayorIgualQue MACRO op1, op2, res
 	LOCAL LABEL1
 	LOCAL SALIR
 
-	MOV AL, op1
-	CMP AL, op2
+	MOV AX, op1
+	CMP AX, op2
 	JL	LABEL1
 	; true
 	MOV res, 1
@@ -165,9 +164,9 @@ ENDM
 ; SALTOS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-JF MACRO VALOR1,DESTINO
-   	MOV AL,VALOR1
-   	CMP AL,1                   
+JF MACRO VALOR1, DESTINO
+   	MOV AX, VALOR1
+   	CMP AX, 1                   
    	JNE DESTINO
 ENDM
 
@@ -179,34 +178,68 @@ ENDM
 ; ENTRADA / SALIDA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-Leer MACRO MESSAGE
-	MOV AH,3Fh
+LeerCadena MACRO cadena
+    LOCAL bucle
+    LOCAL fin
+    MOV SI, OFFSET cadena ; Obtiene la dirección de inicio de la cadena
+
+    ; Leer caracteres desde el teclado hasta presionar Enter
+bucle:
+    MOV AH,3Fh
     MOV BX,0000h
 	MOV CX,0100h
-	LEA DX,MESSAGE
+	LEA DX,cadena
 	INT 21h
 ENDM
 
-EscribirCadena MACRO MESSAGE
-	MOV AH,09
-	LEA DX, MESSAGE
+LeerNumero MACRO numero
+	
+ENDM
+
+EscribirCadena MACRO cadena
+	MOV AH, 09
+	LEA DX, cadena
 	INT 21h
 ENDM
 
-EscribirNumero MACRO MESSAGE
-	MOV CL, MESSAGE
-	ADD CL, 48
-    MOV impresion, CL
-    MOV AH, 2h
-    MOV DL, impresion
-    INT 21h
-			
-	MOV ah,02h
-    MOV dl,0ah 
-    INT 21h
-    MOV ah,02h
-    MOV dl,0dh 
-    INT 21h
+EscribirNumero MACRO numero
+local bucle
+local imprimir
+local fin
+    MOV AX, numero ; Carga el número en el registro AX
+    MOV CX, 10 ; Establece CX a 10 para dividir por 10 en cada iteración
+
+    MOV BX, 0 ; Inicializa BX a cero (indicador de impresión)
+
+bucle:
+	XOR DX, DX ; Limpia DX
+    DIV CX ; Divide el número en AX por 10 (resto en DX, cociente en AX)
+
+    PUSH DX ; Almacena el dígito convertido en la pila
+    INC BX ; Incrementa BX (indicador de impresión)
+
+    CMP AX, 0 ; Comprueba si el cociente es cero
+    JNZ bucle ; Si no es cero, repite el bucle
+
+imprimir:
+    CMP BX, 0 ; Comprueba si el indicador de impresión es cero
+    JZ fin ; Si es cero, sale del bucle de impresión
+
+	POP DX ; Recupera los dígitos de la pila en orden inverso
+
+    ADD DX, '0' ; Convierte el dígito en un carácter ASCII
+    MOV AH, 02h ; AH = 2 para imprimir el carácter
+    INT 21h ; Imprime el dígito
+
+    DEC BX ; Decrementa BX (indicador de impresión)
+    JMP imprimir ; Salta al siguiente dígito
+
+fin:
+	MOV AH, 02h
+	MOV DL, 0ah
+	INT 21H
+	MOV DL, 0dh
+	INT 21H
 ENDM
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
